@@ -2,7 +2,6 @@
 name = "blueprint-bi-backend"
 version = "0.1.0"
 description = "Blueprint BI LangGraph agent"
-readme = "README.md"
 requires-python = ">=3.12,<3.13"
 
 dependencies = [
