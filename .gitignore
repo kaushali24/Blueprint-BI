@@ -29,3 +29,6 @@ dist/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+*.egg-info/
+*.egg
+build/
