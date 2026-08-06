@@ -1,3 +1,5 @@
+import os
+
 from dotenv import load_dotenv
 
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -10,13 +12,21 @@ from typing_extensions import TypedDict
 
 load_dotenv()
 
+DEFAULT_MODEL = "gemini-3.6-flash"
+
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
 
 
+if not os.environ.get("GOOGLE_API_KEY"):
+    raise RuntimeError(
+        "GOOGLE_API_KEY is not set. Copy backend/.env.example to backend/.env "
+        "and add your key from https://aistudio.google.com/apikey"
+    )
+
 model = ChatGoogleGenerativeAI(
-    model="gemini-3.6-flash",
+    model=os.environ.get("GEMINI_MODEL", DEFAULT_MODEL),
 )
 
 
