@@ -2,33 +2,61 @@ schema: spec-driven
 githubCopilot:
   cloudAgent: true
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+  Project: Blueprint BI / ChatInsights
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+  Purpose:
+  AI-powered business intelligence system that transforms
+  WhatsApp customer conversations into structured business
+  information and actionable insights for small and independent
+  businesses.
 
-# Per-operation guidance (optional)
-# Add advisory guidance for how apply and archive work should be conducted.
-# This is separate from artifact rules above.
-# Example:
-#   operations:
-#     apply:
-#       guidance:
-#         - Keep test summaries concise
-#     archive:
-#       guidance:
-#         - Summarize the archive outcome before finishing
+  MVP domain:
+  Sri Lankan home bakery.
+
+  MVP data source:
+  WhatsApp exported chat ZIP files.
+  Direct WhatsApp API integration is NOT part of the MVP.
+
+  Backend:
+  Python + FastAPI.
+
+  Frontend:
+  Next.js.
+
+  Database:
+  SQLite + SQLAlchemy.
+
+  Agent:
+  LangGraph / LangChain.
+
+  Development approach:
+  Specification-Driven Development using OpenSpec.
+
+  MVP duration:
+  Three weeks.
+
+  Core MVP workflow:
+  WhatsApp ZIP ingestion
+  → parsing
+  → normalization
+  → business relevance detection
+  → AI extraction
+  → structured database
+  → analytics
+  → AI business assistant.
+
+  Important principles:
+  - Preserve raw conversation data.
+  - Keep AI-derived data separate from raw data.
+  - AI-derived facts should retain source message references.
+  - Use database/analytics tools for quantitative questions.
+  - Use LLMs for language understanding and interpretation.
+  - Do not build direct WhatsApp API integration in the MVP.
+  - Do not over-engineer advanced video processing.
+  - Personal conversations should not unnecessarily contribute
+    to business analytics.
+  - New WhatsApp identities should initially remain separate
+    unless there is sufficient evidence to link them.
+  - AI should not silently fabricate business facts.
+  - Uncertain important information should support human review.
