@@ -8,6 +8,11 @@
 *.swo
 *~
 
+# GitHub - IDE specific configurations
+.github/agents/
+.github/prompts/
+.github/skills/
+
 # Python
 __pycache__/
 *.py[cod]
