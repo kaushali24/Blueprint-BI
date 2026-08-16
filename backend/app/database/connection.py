@@ -32,8 +32,15 @@ SessionLocal = sessionmaker(
 
 
 @contextmanager
-def session_scope():
-    session = SessionLocal()
+def session_scope(bind=None):
+    factory = SessionLocal if bind is None else sessionmaker(
+        bind=bind,
+        autoflush=False,
+        autocommit=False,
+        expire_on_commit=False,
+        future=True,
+    )
+    session = factory()
     try:
         yield session
         session.commit()
