@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Generator
+from typing import Any
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
-from sqlalchemy.orm import Session
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from sqlalchemy.exc import OperationalError
 
-from app.database.connection import SessionLocal
+from app.database.connection import engine, session_scope
 from app.database.models import Business
 from app.ingestion.service import IngestionService
 from app.ingestion.validator import validate_zip_package
@@ -13,19 +13,10 @@ from app.ingestion.validator import validate_zip_package
 app = FastAPI(title="Blueprint BI API")
 
 
-def get_db() -> Generator[Session, None, None]:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 @app.post("/api/v1/whatsapp/imports")
 async def upload_whatsapp_import(
     business_id: int = Form(...),
     file: UploadFile = File(...),
-    db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     if file.filename is None or not file.filename.strip():
         raise HTTPException(status_code=400, detail={"errors": ["A WhatsApp ZIP file is required."]})
@@ -44,18 +35,33 @@ async def upload_whatsapp_import(
             detail={"errors": validation.errors, "warnings": validation.warnings},
         )
 
-    business = db.get(Business, business_id)
-    if business is None:
-        raise HTTPException(
-            status_code=404,
-            detail={"errors": [f"Business {business_id} was not found."]},
-        )
+    try:
+        with session_scope() as session:
+            business = session.get(Business, business_id)
+            if business is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail={"errors": [f"Business {business_id} was not found."]},
+                )
 
-    result = IngestionService(db.bind).import_package(
-        business_id=business_id,
-        file_bytes=payload,
-        import_name=file.filename,
-    )
+        result = IngestionService(engine).import_package(
+            business_id=business_id,
+            file_bytes=payload,
+            import_name=file.filename,
+        )
+    except OperationalError as exc:
+        if "database is locked" in str(exc).lower():
+            raise HTTPException(
+                status_code=503,
+                detail={
+                    "errors": [
+                        "The database is locked by another application. "
+                        "Close DB Browser or other SQLite tools, stop duplicate backend processes, "
+                        "then retry the import."
+                    ]
+                },
+            ) from exc
+        raise
 
     response = {
         "import_batch_id": result.import_batch_id,

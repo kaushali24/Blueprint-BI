@@ -1,6 +1,7 @@
 import asyncio
 import io
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -90,8 +91,8 @@ def test_identity_isolation_and_partial_transaction_are_safe():
     with SessionLocal() as session:
         identities = session.execute(select(WhatsAppIdentity)).scalars().all()
         participants = session.execute(select(Participant)).scalars().all()
-        assert len(identities) >= 1
-        assert len(participants) >= 1
+        assert len(identities) == 1
+        assert len(participants) == 1
         assert session.query(Message).count() == 2
 
 
@@ -127,9 +128,23 @@ def test_repeated_import_reuses_existing_conversation_for_same_business():
         assert len(messages) == 2
 
 
-def test_upload_api_accepts_valid_zip_and_returns_import_result():
+def _patch_main_db(monkeypatch, engine):
+    import app.main as main_module
+    from app.database.connection import session_scope as connection_session_scope
+
+    @contextmanager
+    def test_session_scope():
+        with connection_session_scope(bind=engine) as session:
+            yield session
+
+    monkeypatch.setattr(main_module, "engine", engine)
+    monkeypatch.setattr(main_module, "session_scope", test_session_scope)
+
+
+def test_upload_api_accepts_valid_zip_and_returns_import_result(monkeypatch):
     engine = _make_engine()
     factory = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False, future=True)
+    _patch_main_db(monkeypatch, engine)
 
     with factory() as session:
         session.add(Business(name="Upload Bakery", slug="upload-bakery"))
@@ -140,16 +155,17 @@ def test_upload_api_accepts_valid_zip_and_returns_import_result():
         archive.writestr("chat.txt", "2024-01-02, 09:15 - Nethmi: Hello from upload\n")
 
     file_obj = UploadFile(filename="chat.zip", file=io.BytesIO(payload.getvalue()))
-    result = asyncio.run(upload_whatsapp_import(business_id=1, file=file_obj, db=factory()))
+    result = asyncio.run(upload_whatsapp_import(business_id=1, file=file_obj))
 
     assert result["status"] in {"completed", "partial"}
     assert result["is_successful"] is True
     assert result["import_batch_id"] is not None
 
 
-def test_upload_api_rejects_invalid_or_missing_upload():
+def test_upload_api_rejects_invalid_or_missing_upload(monkeypatch):
     engine = _make_engine()
     factory = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False, future=True)
+    _patch_main_db(monkeypatch, engine)
 
     with factory() as session:
         session.add(Business(name="Reject Bakery", slug="reject-bakery"))
@@ -157,7 +173,7 @@ def test_upload_api_rejects_invalid_or_missing_upload():
 
     invalid_file = UploadFile(filename="bad.txt", file=io.BytesIO(b"not a zip"))
     with pytest.raises(HTTPException, match="Only ZIP archive uploads are supported"):
-        asyncio.run(upload_whatsapp_import(business_id=1, file=invalid_file, db=factory()))
+        asyncio.run(upload_whatsapp_import(business_id=1, file=invalid_file))
 
     with pytest.raises(HTTPException):
-        asyncio.run(upload_whatsapp_import(business_id=999, file=UploadFile(filename="chat.zip", file=io.BytesIO(b"not a zip")), db=factory()))
+        asyncio.run(upload_whatsapp_import(business_id=999, file=UploadFile(filename="chat.zip", file=io.BytesIO(b"not a zip"))))

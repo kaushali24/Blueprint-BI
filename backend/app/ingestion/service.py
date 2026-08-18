@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import io
+import json
 import re
-import zipfile
 from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
@@ -19,8 +18,27 @@ from app.database.models import (
     WhatsAppIdentity,
 )
 
+from .identity import derive_whatsapp_identity_keys
 from .parser import parse_whatsapp_chat_text
 from .validator import temporary_zip_workspace, validate_zip_package
+
+
+CHAT_TEXT_SUFFIXES = {".txt", ".csv", ".json"}
+
+
+def _discover_chat_files(workspace_root: Path) -> list[Path]:
+    return sorted(
+        path
+        for path in workspace_root.rglob("*")
+        if path.is_file() and path.suffix.lower() in CHAT_TEXT_SUFFIXES
+    )
+
+
+def _conversation_ref_for_chat_file(file_path: Path, workspace_root: Path) -> str:
+    stem = file_path.stem.strip()
+    if stem.lower() in {"_chat", "chat"} and file_path.parent != workspace_root:
+        return file_path.parent.name
+    return stem or "chat"
 
 
 MEDIA_SUFFIXES = {
@@ -33,12 +51,36 @@ MEDIA_SUFFIXES = {
     "mov": "video",
     "mp3": "audio",
     "m4a": "audio",
+    "opus": "audio",
+    "ogg": "audio",
     "pdf": "document",
     "doc": "document",
     "docx": "document",
     "txt": "document",
     "csv": "document",
 }
+
+IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
+VIDEO_EXTENSIONS = {"mp4", "mov"}
+AUDIO_EXTENSIONS = {"mp3", "m4a", "opus", "ogg"}
+
+
+def _serialize_json_list(values: list[str]) -> str | None:
+    if not values:
+        return None
+    return json.dumps(values)
+
+
+def _deserialize_json_list(payload: str | None) -> list[str]:
+    if not payload:
+        return []
+    try:
+        decoded = json.loads(payload)
+    except json.JSONDecodeError:
+        return [payload]
+    if isinstance(decoded, list):
+        return [str(item) for item in decoded]
+    return [str(decoded)]
 
 
 @dataclass
@@ -54,8 +96,23 @@ class IngestionService:
     def __init__(self, engine=None):
         self.engine = engine
 
-    def _make_fingerprint(self, conversation_id: int, timestamp, sender: str, content: str, message_type: str) -> str:
-        raw = f"{conversation_id}|{timestamp.isoformat()}|{(sender or '').strip().lower()}|{(content or '').strip()}|{message_type}"
+    def _make_fingerprint(
+        self,
+        conversation_id: int,
+        timestamp,
+        source_timestamp: str,
+        sender: str,
+        content: str,
+        message_type: str,
+    ) -> str:
+        if timestamp is not None:
+            timestamp_key = timestamp.isoformat()
+        else:
+            timestamp_key = f"raw:{source_timestamp}"
+        raw = (
+            f"{conversation_id}|{timestamp_key}|{(sender or '').strip().lower()}|"
+            f"{(content or '').strip()}|{message_type}"
+        )
         return sha256(raw.encode("utf-8")).hexdigest()
 
     def _extract_media_references(self, content: str) -> list[str]:
@@ -68,14 +125,21 @@ class IngestionService:
                 refs.append(match)
         return refs
 
-    def _ensure_identity(self, session, business_id: int, sender: str):
-        normalized = sender.strip()
-        if not normalized:
-            normalized = "unknown"
+    def _media_mime_type(self, ext: str) -> str | None:
+        if ext in IMAGE_EXTENSIONS:
+            return f"image/{'jpeg' if ext == 'jpg' else ext}"
+        if ext in VIDEO_EXTENSIONS:
+            return f"video/{ext}"
+        if ext in AUDIO_EXTENSIONS:
+            return f"audio/{ext}"
+        return f"application/{ext}"
+
+    def _ensure_identity(self, session, business_id: int, conversation_ref: str, sender: str):
+        whatsapp_number, normalized_number = derive_whatsapp_identity_keys(conversation_ref, sender)
         identity = session.execute(
             select(WhatsAppIdentity).where(
                 WhatsAppIdentity.business_id == business_id,
-                WhatsAppIdentity.normalized_number == normalized,
+                WhatsAppIdentity.normalized_number == normalized_number,
             )
         ).scalar_one_or_none()
 
@@ -84,15 +148,49 @@ class IngestionService:
 
         identity = WhatsAppIdentity(
             business_id=business_id,
-            whatsapp_number=normalized,
-            normalized_number=normalized,
+            whatsapp_number=whatsapp_number,
+            normalized_number=normalized_number,
             is_verified=False,
         )
         session.add(identity)
         session.flush()
         return identity
 
-    def _ensure_conversation(self, session, business_id: int, conversation_ref: str):
+    def _ensure_participant(
+        self,
+        session,
+        conversation_id: int,
+        business_id: int,
+        identity: WhatsAppIdentity,
+        display_name: str,
+    ):
+        participant = session.execute(
+            select(Participant).where(
+                Participant.conversation_id == conversation_id,
+                Participant.whatsapp_identity_id == identity.id,
+            )
+        ).scalar_one_or_none()
+        if participant is not None:
+            return participant
+
+        participant = Participant(
+            conversation_id=conversation_id,
+            business_id=business_id,
+            whatsapp_identity_id=identity.id,
+            display_name=display_name,
+            participant_type=None,
+        )
+        session.add(participant)
+        session.flush()
+        return participant
+
+    def _ensure_conversation(
+        self,
+        session,
+        business_id: int,
+        conversation_ref: str,
+        import_batch_id: int,
+    ):
         existing = session.execute(
             select(Conversation).where(
                 Conversation.business_id == business_id,
@@ -102,10 +200,34 @@ class IngestionService:
         if existing is not None:
             return existing
 
-        conversation = Conversation(business_id=business_id, conversation_ref=conversation_ref)
+        conversation = Conversation(
+            business_id=business_id,
+            conversation_ref=conversation_ref,
+            import_batch_id=import_batch_id,
+        )
         session.add(conversation)
         session.flush()
         return conversation
+
+    def _finalize_import_batch(
+        self,
+        session,
+        import_batch: ImportBatch,
+        status: str,
+        errors: list[str],
+        warnings: list[str],
+    ) -> None:
+        import_batch.status = status
+        import_batch.errors_json = _serialize_json_list(errors)
+        import_batch.warnings_json = _serialize_json_list(warnings)
+        session.flush()
+
+    @staticmethod
+    def load_import_batch_diagnostics(import_batch: ImportBatch) -> tuple[list[str], list[str]]:
+        return (
+            _deserialize_json_list(import_batch.errors_json),
+            _deserialize_json_list(import_batch.warnings_json),
+        )
 
     def import_package(self, business_id: int, file_bytes: bytes, import_name: str = "whatsapp-export") -> ImportBatchResult:
         validation = validate_zip_package(file_bytes)
@@ -124,8 +246,13 @@ class IngestionService:
             session.flush()
 
             if not validation.is_valid:
-                import_batch.status = "failed"
-                session.flush()
+                self._finalize_import_batch(
+                    session,
+                    import_batch,
+                    status="failed",
+                    errors=validation.errors,
+                    warnings=validation.warnings,
+                )
                 return ImportBatchResult(
                     import_batch_id=import_batch.id,
                     is_successful=False,
@@ -141,33 +268,50 @@ class IngestionService:
             try:
                 with temporary_zip_workspace(file_bytes) as (temp_dir, workspace_warnings):
                     final_warnings.extend(workspace_warnings)
-                    supported_files = sorted(p for p in temp_dir.iterdir() if p.is_file())
+                    chat_files = _discover_chat_files(temp_dir)
 
-                    for file_path in supported_files:
+                    if not chat_files:
+                        final_errors.append(
+                            "No supported chat export files were found in the extracted archive."
+                        )
+
+                    for file_path in chat_files:
                         try:
-                            if file_path.suffix.lower() not in {".txt", ".csv", ".json"}:
-                                final_warnings.append(f"Skipped non-supported file: {file_path.name}")
-                                continue
-
                             decoded = file_path.read_text(encoding="utf-8", errors="replace")
                             records = parse_whatsapp_chat_text(decoded)
                             if not records:
                                 final_warnings.append(f"No parseable records found in {file_path.name}")
                                 continue
 
-                            conversation_ref = file_path.stem or "chat"
-                            conversation = self._ensure_conversation(session, business_id, conversation_ref)
+                            conversation_ref = _conversation_ref_for_chat_file(file_path, temp_dir)
+                            conversation = self._ensure_conversation(
+                                session,
+                                business_id,
+                                conversation_ref,
+                                import_batch.id,
+                            )
 
                             for index, row in enumerate(records):
                                 sender = str(row.get("sender") or "Unknown").strip()
                                 timestamp = row.get("timestamp")
+                                source_timestamp = str(row.get("source_timestamp") or "").strip()
+                                timestamp_parsed = bool(row.get("timestamp_parsed"))
                                 content = str(row.get("content") or "").strip()
+                                message_type = str(row.get("message_type") or "text")
+
+                                if not timestamp_parsed:
+                                    final_warnings.append(
+                                        f"Unparseable timestamp preserved for message in {file_path.name}:{index}: "
+                                        f"{source_timestamp or 'unknown'}"
+                                    )
+
                                 fingerprint = self._make_fingerprint(
                                     conversation.id,
                                     timestamp,
+                                    source_timestamp,
                                     sender,
                                     content,
-                                    "text",
+                                    message_type,
                                 )
 
                                 existing_message = session.execute(
@@ -179,30 +323,35 @@ class IngestionService:
                                 if existing_message is not None:
                                     continue
 
-                                identity = self._ensure_identity(session, business_id, sender)
-                                participant = Participant(
-                                    conversation_id=conversation.id,
-                                    business_id=business_id,
-                                    whatsapp_identity_id=identity.id,
-                                    display_name=sender,
-                                    participant_type="customer",
+                                identity = self._ensure_identity(session, business_id, conversation_ref, sender)
+                                participant = self._ensure_participant(
+                                    session,
+                                    conversation.id,
+                                    business_id,
+                                    identity,
+                                    sender,
                                 )
-                                session.add(participant)
-                                session.flush()
 
                                 message = Message(
                                     conversation_id=conversation.id,
+                                    import_batch_id=import_batch.id,
                                     participant_id=participant.id,
                                     source_message_id=f"{file_path.name}:{index}",
                                     message_fingerprint=fingerprint,
                                     content=content,
-                                    message_type="text",
+                                    message_type=message_type,
                                     sent_at=timestamp,
+                                    source_timestamp=source_timestamp or None,
                                 )
                                 session.add(message)
                                 session.flush()
 
-                                for media_id in self._extract_media_references(content):
+                                media_refs = self._extract_media_references(content)
+                                if media_refs:
+                                    final_warnings.append(
+                                        f"Advanced media interpretation was not performed for {file_path.name}:{index}."
+                                    )
+                                for media_id in media_refs:
                                     ext = media_id.rsplit(".", 1)[-1].lower()
                                     session.add(
                                         Media(
@@ -210,7 +359,7 @@ class IngestionService:
                                             media_type=MEDIA_SUFFIXES.get(ext, "document"),
                                             file_name=media_id,
                                             source_path=media_id,
-                                            mime_type=f"application/{ext}" if ext not in {"jpg", "jpeg", "png", "gif", "webp", "mp4", "mov", "mp3", "m4a"} else None,
+                                            mime_type=self._media_mime_type(ext),
                                         )
                                     )
                                 imported_count += 1
@@ -221,27 +370,44 @@ class IngestionService:
                             session.rollback()
                             final_errors.append(f"Failed to process {file_path.name}: {exc}")
 
-                import_batch.status = "completed" if imported_count else "failed"
                 if imported_count and final_errors:
-                    import_batch.status = "partial"
-                if not imported_count and final_errors:
-                    import_batch.status = "failed"
+                    status = "partial"
+                elif imported_count:
+                    status = "completed"
+                else:
+                    status = "failed"
+                    if not final_errors and not final_warnings:
+                        final_errors.append(
+                            "Import completed without persisting any messages from the uploaded archive."
+                        )
 
-                session.flush()
+                self._finalize_import_batch(
+                    session,
+                    import_batch,
+                    status=status,
+                    errors=final_errors,
+                    warnings=final_warnings,
+                )
                 return ImportBatchResult(
                     import_batch_id=import_batch.id,
-                    is_successful=imported_count > 0 and not final_errors,
-                    status=import_batch.status,
+                    is_successful=imported_count > 0 and status != "failed",
+                    status=status,
                     errors=final_errors,
                     warnings=final_warnings,
                 )
             except Exception as exc:
-                import_batch.status = "failed"
-                session.flush()
+                final_errors.append(f"Import failed: {exc}")
+                self._finalize_import_batch(
+                    session,
+                    import_batch,
+                    status="failed",
+                    errors=final_errors,
+                    warnings=final_warnings,
+                )
                 return ImportBatchResult(
                     import_batch_id=import_batch.id,
                     is_successful=False,
                     status="failed",
-                    errors=[f"Import failed: {exc}"] + final_errors,
+                    errors=final_errors,
                     warnings=final_warnings,
                 )

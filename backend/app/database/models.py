@@ -117,6 +117,8 @@ class ImportBatch(Base):
     import_name: Mapped[str] = mapped_column(String(255), nullable=False)
     source_file_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
+    errors_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    warnings_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
@@ -126,6 +128,7 @@ class ImportBatch(Base):
     conversations: Mapped[list["Conversation"]] = relationship(
         back_populates="import_batch", cascade="all, delete-orphan"
     )
+    messages: Mapped[list["Message"]] = relationship(back_populates="import_batch")
 
 
 class Conversation(Base):
@@ -179,6 +182,11 @@ class Participant(Base):
     messages: Mapped[list["Message"]] = relationship(back_populates="participant", cascade="all, delete-orphan")
 
     __table_args__ = (
+        UniqueConstraint(
+            "conversation_id",
+            "whatsapp_identity_id",
+            name="uq_participant_conversation_identity",
+        ),
         Index("ix_participant_conversation_business", "conversation_id", "business_id"),
     )
 
@@ -188,18 +196,21 @@ class Message(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     conversation_id: Mapped[int] = mapped_column(ForeignKey("conversation.id"), nullable=False, index=True)
+    import_batch_id: Mapped[Optional[int]] = mapped_column(ForeignKey("import_batch.id"), nullable=True, index=True)
     participant_id: Mapped[Optional[int]] = mapped_column(ForeignKey("participant.id"), nullable=True, index=True)
     source_message_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     message_fingerprint: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     content: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     message_type: Mapped[str] = mapped_column(String(50), default="text", nullable=False)
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    source_timestamp: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
     )
 
     conversation: Mapped[Conversation] = relationship(back_populates="messages")
+    import_batch: Mapped[Optional[ImportBatch]] = relationship(back_populates="messages")
     participant: Mapped[Optional[Participant]] = relationship(back_populates="messages")
     media: Mapped[list["Media"]] = relationship(back_populates="message", cascade="all, delete-orphan")
     evidence_links: Mapped[list["ExtractionEvidence"]] = relationship(
