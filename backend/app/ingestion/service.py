@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from dataclasses import dataclass, field
 from hashlib import sha256
@@ -21,6 +22,14 @@ from app.database.models import (
 from .identity import derive_whatsapp_identity_keys
 from .parser import parse_whatsapp_chat_text
 from .validator import temporary_zip_workspace, validate_zip_package
+
+logger = logging.getLogger(__name__)
+
+
+# Import lazily to avoid circular dependency; used in import_package only.
+def _get_relevance_service(engine):
+    from app.relevance.service import RelevanceService  # noqa: PLC0415
+    return RelevanceService(engine=engine)
 
 
 CHAT_TEXT_SUFFIXES = {".txt", ".csv", ".json"}
@@ -234,6 +243,7 @@ class IngestionService:
         final_errors: list[str] = []
         final_warnings: list[str] = []
         imported_count = 0
+        batch_result: ImportBatchResult
 
         with session_scope(bind=self.engine) as session:
             import_batch = ImportBatch(
@@ -388,7 +398,7 @@ class IngestionService:
                     errors=final_errors,
                     warnings=final_warnings,
                 )
-                return ImportBatchResult(
+                batch_result = ImportBatchResult(
                     import_batch_id=import_batch.id,
                     is_successful=imported_count > 0 and status != "failed",
                     status=status,
@@ -404,10 +414,35 @@ class IngestionService:
                     errors=final_errors,
                     warnings=final_warnings,
                 )
-                return ImportBatchResult(
+                batch_result = ImportBatchResult(
                     import_batch_id=import_batch.id,
                     is_successful=False,
                     status="failed",
                     errors=final_errors,
                     warnings=final_warnings,
                 )
+
+        # --- Task 6.1: Trigger relevance assessment after ingestion persistence ---
+        # Run outside the main session_scope so that raw message data is safely
+        # committed before relevance processing begins.  Relevance failures are
+        # caught here and added as warnings so that they do not affect the
+        # ingestion result (Task 6.6).
+        if batch_result.is_successful and batch_result.import_batch_id is not None:
+            try:
+                relevance_service = _get_relevance_service(self.engine)
+                relevance_service.assess_messages_for_import(
+                    import_batch_id=batch_result.import_batch_id,
+                    business_id=business_id,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Relevance assessment failed for import_batch_id=%d: %s",
+                    batch_result.import_batch_id,
+                    exc,
+                    exc_info=True,
+                )
+                batch_result.warnings.append(
+                    f"Relevance assessment could not be completed: {exc}"
+                )
+
+        return batch_result
