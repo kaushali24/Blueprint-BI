@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from datetime import datetime, timezone
 
 # Android / default export: 06/07/2026, 09:12 - Sender: message
@@ -145,6 +146,7 @@ def parse_whatsapp_chat_text(raw_text: str) -> list[dict]:
     Known WhatsApp system/metadata lines are skipped.
     """
     records: list[dict] = []
+    message_counter = Counter()
 
     for line in (raw_text or "").splitlines():
         line = line.strip("\ufeff").rstrip()
@@ -153,10 +155,24 @@ def parse_whatsapp_chat_text(raw_text: str) -> list[dict]:
 
         parsed = _try_parse_message_line(line)
         if parsed is not None:
+            # We don't assign sequence yet, since the content might be appended to 
+            # if there are continuation lines. We'll compute sequences at the end.
             records.append(parsed)
             continue
 
         if records:
             records[-1]["content"] = f"{records[-1]['content']}\n{line}".strip()
+
+    # Now assign the intra_minute_sequence after all continuation lines are merged
+    for record in records:
+        key = (
+            record["source_timestamp"],
+            record["sender"],
+            record["content"],
+            record["message_type"]
+        )
+        seq = message_counter[key]
+        record["intra_minute_sequence"] = seq
+        message_counter[key] += 1
 
     return records

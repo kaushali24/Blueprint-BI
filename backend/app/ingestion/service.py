@@ -105,7 +105,7 @@ class IngestionService:
     def __init__(self, engine=None):
         self.engine = engine
 
-    def _make_fingerprint(
+    def _make_legacy_fingerprint(
         self,
         conversation_id: int,
         timestamp,
@@ -121,6 +121,26 @@ class IngestionService:
         raw = (
             f"{conversation_id}|{timestamp_key}|{(sender or '').strip().lower()}|"
             f"{(content or '').strip()}|{message_type}"
+        )
+        return sha256(raw.encode("utf-8")).hexdigest()
+
+    def _make_fingerprint_v2(
+        self,
+        conversation_id: int,
+        timestamp,
+        source_timestamp: str,
+        sender: str,
+        content: str,
+        message_type: str,
+        intra_minute_sequence: int,
+    ) -> str:
+        if timestamp is not None:
+            timestamp_key = timestamp.isoformat()
+        else:
+            timestamp_key = f"raw:{source_timestamp}"
+        raw = (
+            f"{conversation_id}|{timestamp_key}|{(sender or '').strip().lower()}|"
+            f"{(content or '').strip()}|{message_type}|{intra_minute_sequence}"
         )
         return sha256(raw.encode("utf-8")).hexdigest()
 
@@ -308,6 +328,7 @@ class IngestionService:
                                 timestamp_parsed = bool(row.get("timestamp_parsed"))
                                 content = str(row.get("content") or "").strip()
                                 message_type = str(row.get("message_type") or "text")
+                                intra_minute_sequence = int(row.get("intra_minute_sequence") or 0)
 
                                 if not timestamp_parsed:
                                     final_warnings.append(
@@ -315,21 +336,39 @@ class IngestionService:
                                         f"{source_timestamp or 'unknown'}"
                                     )
 
-                                fingerprint = self._make_fingerprint(
+                                fingerprint_v2 = self._make_fingerprint_v2(
                                     conversation.id,
                                     timestamp,
                                     source_timestamp,
                                     sender,
                                     content,
                                     message_type,
+                                    intra_minute_sequence,
                                 )
 
-                                existing_message = session.execute(
-                                    select(Message).where(
-                                        Message.conversation_id == conversation.id,
-                                        Message.message_fingerprint == fingerprint,
+                                if intra_minute_sequence == 0:
+                                    legacy_fingerprint = self._make_legacy_fingerprint(
+                                        conversation.id,
+                                        timestamp,
+                                        source_timestamp,
+                                        sender,
+                                        content,
+                                        message_type,
                                     )
-                                ).scalar_one_or_none()
+                                    existing_message = session.execute(
+                                        select(Message).where(
+                                            Message.conversation_id == conversation.id,
+                                            Message.message_fingerprint.in_([fingerprint_v2, legacy_fingerprint])
+                                        )
+                                    ).scalar_one_or_none()
+                                else:
+                                    existing_message = session.execute(
+                                        select(Message).where(
+                                            Message.conversation_id == conversation.id,
+                                            Message.message_fingerprint == fingerprint_v2
+                                        )
+                                    ).scalar_one_or_none()
+
                                 if existing_message is not None:
                                     continue
 
@@ -347,7 +386,7 @@ class IngestionService:
                                     import_batch_id=import_batch.id,
                                     participant_id=participant.id,
                                     source_message_id=f"{file_path.name}:{index}",
-                                    message_fingerprint=fingerprint,
+                                    message_fingerprint=fingerprint_v2,
                                     content=content,
                                     message_type=message_type,
                                     sent_at=timestamp,
