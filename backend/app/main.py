@@ -7,7 +7,7 @@ from sqlalchemy.exc import OperationalError
 
 from app.database.connection import engine, session_scope
 from app.database.models import Business
-from app.ingestion.service import IngestionService
+from app.coordinator import ImportCoordinator
 from app.ingestion.validator import validate_zip_package
 
 app = FastAPI(title="Blueprint BI API")
@@ -44,7 +44,7 @@ async def upload_whatsapp_import(
                     detail={"errors": [f"Business {business_id} was not found."]},
                 )
 
-        result = IngestionService(engine).import_package(
+        result = ImportCoordinator(engine).process_import(
             business_id=business_id,
             file_bytes=payload,
             import_name=file.filename,

@@ -461,27 +461,4 @@ class IngestionService:
                     warnings=final_warnings,
                 )
 
-        # --- Task 6.1: Trigger relevance assessment after ingestion persistence ---
-        # Run outside the main session_scope so that raw message data is safely
-        # committed before relevance processing begins.  Relevance failures are
-        # caught here and added as warnings so that they do not affect the
-        # ingestion result (Task 6.6).
-        if batch_result.is_successful and batch_result.import_batch_id is not None:
-            try:
-                relevance_service = _get_relevance_service(self.engine)
-                relevance_service.assess_messages_for_import(
-                    import_batch_id=batch_result.import_batch_id,
-                    business_id=business_id,
-                )
-            except Exception as exc:
-                logger.warning(
-                    "Relevance assessment failed for import_batch_id=%d: %s",
-                    batch_result.import_batch_id,
-                    exc,
-                    exc_info=True,
-                )
-                batch_result.warnings.append(
-                    f"Relevance assessment could not be completed: {exc}"
-                )
-
         return batch_result

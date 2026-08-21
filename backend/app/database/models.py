@@ -308,8 +308,8 @@ class OrderItem(Base):
     order_id: Mapped[int] = mapped_column(ForeignKey("order.id"), nullable=False, index=True)
     product_name: Mapped[str] = mapped_column(String(255), nullable=False)
     quantity: Mapped[Decimal] = mapped_column(Numeric(12, 3), nullable=False)
-    unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    line_total: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    unit_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
+    line_total: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     order: Mapped[Order] = relationship(back_populates="order_items")
@@ -408,6 +408,25 @@ class ExtractionEvidence(Base):
             name="ck_evidence_single_target",
         ),
         Index("ix_evidence_message_target", "message_id", "inquiry_id", "order_id", "feedback_id", "extracted_fact_id"),
+    )
+
+
+class ExtractionTarget(Base):
+    """Ledger for tracking AI extraction per message and business to ensure idempotency."""
+    
+    __tablename__ = "extraction_target"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    message_id: Mapped[int] = mapped_column(ForeignKey("message.id"), nullable=False, index=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("business.id"), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
+    attempted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    failure_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("message_id", "business_id", name="uq_extraction_target_message_business"),
     )
 
 
@@ -586,6 +605,7 @@ __all__ = [
     "Feedback",
     "ExtractedFact",
     "ExtractionEvidence",
+    "ExtractionTarget",
     "RelevanceAssessment",
     "RelevanceAssessmentHistory",
     "RELEVANCE_STATES",

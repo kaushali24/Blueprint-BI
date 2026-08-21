@@ -268,10 +268,10 @@ def test_incomplete_order_cannot_leave_partial_order_items():
             session.add(
                 OrderItem(
                     order_id=order.id,
-                    product_name="Cake",
+                    product_name=None, # Intentional violation of NOT NULL
                     quantity=Decimal("1"),
                     unit_price=Decimal("10.00"),
-                    line_total=None,
+                    line_total=Decimal("10.00"),
                 )
             )
             session.flush()
