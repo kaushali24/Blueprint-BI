@@ -9,6 +9,13 @@ from app.database.connection import engine, session_scope
 from app.database.models import Business
 from app.coordinator import ImportCoordinator
 from app.ingestion.validator import validate_zip_package
+from app.assistant.graph import app_graph
+from langchain_core.messages import HumanMessage
+from pydantic import BaseModel
+
+class ChatRequest(BaseModel):
+    business_id: int
+    message: str
 
 app = FastAPI(title="Blueprint BI API")
 
@@ -75,3 +82,22 @@ async def upload_whatsapp_import(
         raise HTTPException(status_code=400, detail=response)
 
     return response
+
+
+@app.post("/api/v1/assistant/chat")
+async def assistant_chat(request: ChatRequest) -> dict[str, Any]:
+    with session_scope() as session:
+        business = session.get(Business, request.business_id)
+        if business is None:
+            raise HTTPException(
+                status_code=404,
+                detail={"errors": [f"Business {request.business_id} was not found."]},
+            )
+
+    config = {"configurable": {"business_id": request.business_id}}
+    state = {"messages": [HumanMessage(content=request.message)]}
+    try:
+        result = await app_graph.ainvoke(state, config=config)
+        return {"response": result["messages"][-1].content}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

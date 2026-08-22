@@ -20,6 +20,7 @@ This document provides essential architectural context, engineering principles, 
 
 * **Backend:** Python 3.11+ / 3.14, FastAPI, Uvicorn, Pydantic v2
 * **Database & ORM:** SQLAlchemy 2.0 (Mapped Column syntax), SQLite (`backend/data/blueprint.db`)
+* **AI Orchestration:** LangGraph, LangChain, Google Gemini API
 * **Frontend:** Next.js (App Router), TypeScript, React, TailwindCSS (in `frontend/agent-chat-ui`)
 * **Testing:** `pytest`, `pytest-asyncio`, `httpx`
 * **Change Management:** OpenSpec (`openspec/`) specification-driven development
@@ -48,6 +49,10 @@ This document provides essential architectural context, engineering principles, 
 ### D. Evidence Traceability
 * Every AI-derived record (`Inquiry`, `Order`, `Feedback`, `ExtractedFact`) must reference its supporting raw source `Message` through `ExtractionEvidence` linking records.
 
+### E. Assistant & Tool Boundaries
+* The AI Assistant (`backend/app/assistant/`) must rely on deterministic services (e.g., `AnalyticsService`) for authoritative business metrics and calculations. LLMs must **not** perform independent math on raw data or execute arbitrary SQL.
+* **Context Injection:** Tools must automatically extract contextual constraints (like `business_id`) via `RunnableConfig` rather than exposing them as arguments the LLM controls, ensuring strict multi-tenant isolation.
+
 ---
 
 ## 4. Repository Structure
@@ -56,10 +61,15 @@ This document provides essential architectural context, engineering principles, 
 .
 ├── backend/
 │   ├── app/
+│   │   ├── analytics/         # Deterministic business metrics calculations
+│   │   ├── assistant/         # LangGraph conversational agent and tools
 │   │   ├── database/          # Models (SQLAlchemy), connection, base
+│   │   ├── extraction/        # Structured entity extraction pipeline
 │   │   ├── ingestion/         # WhatsApp parser, validator, identity, service
+│   │   ├── relevance/         # Binary classification of business relevance
+│   │   ├── coordinator.py     # End-to-end processing orchestrator
 │   │   ├── main.py            # FastAPI application & API endpoints
-│   │   └── agent.py           # Core agent interfaces
+│   │   └── agent.py           # Legacy core agent interfaces
 │   ├── data/
 │   │   └── blueprint.db       # SQLite database file (WAL mode)
 │   └── requirements.txt

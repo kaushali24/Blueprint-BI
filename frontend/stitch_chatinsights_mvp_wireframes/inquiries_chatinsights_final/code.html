@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Inquiries - ChatInsights</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#2f1500",
+                        "secondary-container": "#dce0e4",
+                        "primary": "#00685f",
+                        "secondary": "#5a5f62",
+                        "background": "#f9f9ff",
+                        "primary-container": "#008378",
+                        "on-surface-variant": "#3d4947",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "surface-container": "#e7eeff",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#f9f9ff",
+                        "surface-container-high": "#dee8ff",
+                        "on-background": "#111c2d",
+                        "surface-tint": "#006a61",
+                        "tertiary": "#8d4b00",
+                        "on-primary-fixed": "#00201d",
+                        "surface-variant": "#d8e3fb",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#005049",
+                        "inverse-primary": "#6bd8cb",
+                        "secondary-fixed-dim": "#c3c7cb",
+                        "on-surface": "#111c2d",
+                        "primary-fixed": "#89f5e7",
+                        "surface-container-low": "#f0f3ff",
+                        "tertiary-container": "#b15f00",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-primary-container": "#f4fffc",
+                        "surface-container-highest": "#d8e3fb",
+                        "on-secondary-fixed-variant": "#43474b",
+                        "tertiary-fixed": "#ffdcc3",
+                        "on-secondary-container": "#5e6367",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#fffbff",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#6bd8cb",
+                        "inverse-on-surface": "#ecf1ff",
+                        "on-secondary-fixed": "#171c1f",
+                        "secondary-fixed": "#dfe3e7",
+                        "surface-dim": "#cfdaf2",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "outline-variant": "#bcc9c6",
+                        "inverse-surface": "#263143",
+                        "outline": "#6d7a77",
+                        "surface": "#f9f9ff",
+                        "on-secondary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-gap-sm": "0.5rem",
+                        "container-padding": "1rem",
+                        "card-padding": "1.25rem",
+                        "stack-gap-lg": "1.5rem",
+                        "stack-gap-md": "1rem"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["Inter"],
+                        "metadata": ["Inter"],
+                        "metric-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "metric-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "metadata": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "metric-lg-mobile": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "metric-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        /* Mobile Specific Overrides if needed */
+        @media (max-width: 767px) {
+            .pb-safe { padding-bottom: env(safe-area-inset-bottom, 1rem); }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="bg-surface text-primary font-headline-md fixed top-0 w-full z-50 border-b border-outline-variant flat no shadows flex justify-between items-center px-container-padding h-16 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary cursor-pointer hover:bg-secondary-container transition-colors p-2 rounded-full active:opacity-80 transition-opacity" data-icon="analytics" data-weight="fill" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary tracking-tight">ChatInsights</h1>
+</div>
+<div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant cursor-pointer hover:bg-secondary-container transition-colors active:opacity-80 transition-opacity flex items-center justify-center bg-surface-container">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="A professional headshot of a small business owner, wearing a smart casual dark teal blazer against a bright, minimalist white studio background. Soft, even lighting highlights a confident expression. Corporate modern aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqp5SMIMHq2D-KkXCXZVzKCsGPS7e3FLSgfPONlrOxkVg90H9-q4ym31mtstdts9I7JEbFb-_QO_FdCTOspAvkOaod7-gfnS6lgh_avvFOAoaunbFiUsSoOtvWHYxsFBK-dfN-4wdFwOcNFinxRSfvq205TyYprNhngomkjAQWdnFXAEXCnYiocSYnNYYQwoS0KLYhPaIUZFForfmXBTtgHXkjbcmOIvN4modmsspsuX2L8VSGmGs"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-20 pb-24 px-container-padding max-w-7xl mx-auto w-full md:grid md:grid-cols-12 md:gap-6 lg:gap-8">
+<!-- Header Section -->
+<section class="md:col-span-12 mb-stack-gap-lg mt-4">
+<div class="flex flex-col gap-1">
+<h2 class="font-metric-lg-mobile md:font-metric-lg text-metric-lg-mobile md:text-metric-lg text-on-background">Inquiries</h2>
+<p class="font-metadata text-metadata text-secondary">Manage customer questions and requests.</p>
+</div>
+</section>
+<!-- Search & Filter Bar -->
+<!-- Inquiries List (Bento-ish Layout on Desktop) -->
+<section class="md:col-span-12 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-stack-gap-md">
+<!-- Card 1 -->
+<article class="bg-surface-container-lowest rounded-xl border border-outline-variant p-card-padding hover:shadow-md transition-shadow group relative overflow-hidden flex flex-col justify-between cursor-pointer">
+<div class="absolute top-0 left-0 w-1 h-full bg-tertiary"></div>
+<div class="flex justify-between items-start mb-3 pl-2">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-primary font-bold text-sm">A</div>
+<h3 class="font-headline-md text-[16px] font-semibold text-on-background">Amaya</h3>
+</div>
+<span class="font-metadata text-metadata text-secondary">Today</span>
+</div>
+<div class="mb-4 pl-2">
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"1kg chocolate cake ekak keeyada?"</p>
+</div>
+<div class="flex justify-between items-end pl-2 mt-auto">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-tertiary/10 text-tertiary">
+<span class="material-symbols-outlined text-[14px] mr-1">pending</span> Open
+                    </span>
+<button class="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Card 2 -->
+<article class="bg-surface-container-lowest rounded-xl border border-outline-variant p-card-padding hover:shadow-md transition-shadow group relative overflow-hidden flex flex-col justify-between cursor-pointer">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<div class="flex justify-between items-start mb-3 pl-2">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-primary font-bold text-sm">N</div>
+<h3 class="font-headline-md text-[16px] font-semibold text-on-background">Nadeesha</h3>
+</div>
+<span class="font-metadata text-metadata text-secondary">Yesterday</span>
+</div>
+<div class="mb-4 pl-2">
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"Saturday delivery karanna puluwanda?"</p>
+</div>
+<div class="flex justify-between items-end pl-2 mt-auto">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+<span class="material-symbols-outlined text-[14px] mr-1" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span> Resolved
+                    </span>
+<button class="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Card 3 -->
+<article class="bg-surface-container-lowest rounded-xl border border-outline-variant p-card-padding hover:shadow-md transition-shadow group relative overflow-hidden flex flex-col justify-between cursor-pointer">
+<div class="absolute top-0 left-0 w-1 h-full bg-tertiary"></div>
+<div class="flex justify-between items-start mb-3 pl-2">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-primary font-bold text-sm">D</div>
+<h3 class="font-headline-md text-[16px] font-semibold text-on-background">Dinuka</h3>
+</div>
+<span class="font-metadata text-metadata text-secondary">Yesterday</span>
+</div>
+<div class="mb-4 pl-2">
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"Eggless cake thiyenawada?"</p>
+</div>
+<div class="flex justify-between items-end pl-2 mt-auto">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-tertiary/10 text-tertiary">
+<span class="material-symbols-outlined text-[14px] mr-1">pending</span> Open
+                    </span>
+<button class="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Card 4 -->
+<article class="bg-surface-container-lowest rounded-xl border border-outline-variant p-card-padding hover:shadow-md transition-shadow group relative overflow-hidden flex flex-col justify-between cursor-pointer">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<div class="flex justify-between items-start mb-3 pl-2">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-primary font-bold text-sm">C</div>
+<h3 class="font-headline-md text-[16px] font-semibold text-on-background">Chamari</h3>
+</div>
+<span class="font-metadata text-metadata text-secondary">Oct 12</span>
+</div>
+<div class="mb-4 pl-2">
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2">"Custom design ekak karanna puluwanda?"</p>
+</div>
+<div class="flex justify-between items-end pl-2 mt-auto">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary">
+<span class="material-symbols-outlined text-[14px] mr-1" data-weight="fill" style="font-variation-settings: 'FILL' 1;">check_circle</span> Resolved
+                    </span>
+<button class="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Card 5 -->
+<article class="bg-surface-container-lowest rounded-xl border border-outline-variant p-card-padding hover:shadow-md transition-shadow group relative overflow-hidden flex flex-col justify-between cursor-pointer md:col-span-2 xl:col-span-1">
+<div class="absolute top-0 left-0 w-1 h-full bg-tertiary"></div>
+<div class="flex justify-between items-start mb-3 pl-2">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center text-primary font-bold text-sm">DM</div>
+<h3 class="font-headline-md text-[16px] font-semibold text-on-background">Dilshan</h3>
+</div>
+<span class="font-metadata text-metadata text-secondary">Oct 10</span>
+</div>
+<div class="mb-4 pl-2">
+<div class="p-3 bg-[#F8FAFC] border-l-2 rounded-r-md border-outline-variant">
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 italic">"I received the wrong item..."</p>
+</div>
+</div>
+<div class="flex justify-between items-end pl-2 mt-auto">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-tertiary/10 text-tertiary"><span class="material-symbols-outlined text-[14px] mr-1">pending</span> Open</span>
+<button class="text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</article>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="bg-surface-container-lowest fixed bottom-0 w-full z-50 pb-safe border-t border-outline-variant flex justify-around items-center h-16 px-2 md:hidden">
+<a class="flex flex-col items-center justify-center text-secondary font-label-caps text-label-caps hover:text-primary-container transition-colors active:scale-95 transition-transform duration-150 w-1/5" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="dashboard">dashboard</span>
+<span>Overview</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary font-label-caps text-label-caps hover:text-primary-container transition-colors active:scale-95 transition-transform duration-150 w-1/5" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="upload_file">upload_file</span>
+<span>Imports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary font-label-caps text-label-caps hover:text-primary-container transition-colors active:scale-95 transition-transform duration-150 w-1/5" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="shopping_bag">shopping_bag</span>
+<span>Orders</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary font-bold font-label-caps text-label-caps hover:text-primary-container transition-colors active:scale-95 transition-transform duration-150 w-1/5 relative" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="forum" data-weight="fill" style="font-variation-settings: 'FILL' 1;">forum</span>
+<span>Inquiries</span>
+<!-- Active Indicator Dot -->
+<div class="absolute top-1 right-3 w-2 h-2 rounded-full bg-tertiary border border-surface-container-lowest"></div>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary font-label-caps text-label-caps hover:text-primary-container transition-colors active:scale-95 transition-transform duration-150 w-1/5" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="smart_toy">smart_toy</span>
+<span>Assistant</span>
+</a>
+</nav>
+</body></html>

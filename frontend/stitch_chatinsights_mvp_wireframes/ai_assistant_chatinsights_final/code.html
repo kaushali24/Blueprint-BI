@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>AI Assistant - ChatInsights</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-fixed": "#2f1500",
+                    "secondary-container": "#dce0e4",
+                    "primary": "#00685f",
+                    "secondary": "#5a5f62",
+                    "background": "#f9f9ff",
+                    "primary-container": "#008378",
+                    "on-surface-variant": "#3d4947",
+                    "tertiary-fixed-dim": "#ffb77d",
+                    "surface-container": "#e7eeff",
+                    "on-error-container": "#93000a",
+                    "surface-bright": "#f9f9ff",
+                    "surface-container-high": "#dee8ff",
+                    "on-background": "#111c2d",
+                    "surface-tint": "#006a61",
+                    "tertiary": "#8d4b00",
+                    "on-primary-fixed": "#00201d",
+                    "surface-variant": "#d8e3fb",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#005049",
+                    "inverse-primary": "#6bd8cb",
+                    "secondary-fixed-dim": "#c3c7cb",
+                    "on-surface": "#111c2d",
+                    "primary-fixed": "#89f5e7",
+                    "surface-container-low": "#f0f3ff",
+                    "tertiary-container": "#b15f00",
+                    "surface-container-lowest": "#ffffff",
+                    "on-error": "#ffffff",
+                    "on-primary-container": "#f4fffc",
+                    "surface-container-highest": "#d8e3fb",
+                    "on-secondary-fixed-variant": "#43474b",
+                    "tertiary-fixed": "#ffdcc3",
+                    "on-secondary-container": "#5e6367",
+                    "on-primary": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-container": "#fffbff",
+                    "error": "#ba1a1a",
+                    "primary-fixed-dim": "#6bd8cb",
+                    "inverse-on-surface": "#ecf1ff",
+                    "on-secondary-fixed": "#171c1f",
+                    "secondary-fixed": "#dfe3e7",
+                    "surface-dim": "#cfdaf2",
+                    "on-tertiary-fixed-variant": "#6e3900",
+                    "outline-variant": "#bcc9c6",
+                    "inverse-surface": "#263143",
+                    "outline": "#6d7a77",
+                    "surface": "#f9f9ff",
+                    "on-secondary": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "stack-gap-sm": "0.5rem",
+                    "container-padding": "1rem",
+                    "card-padding": "1.25rem",
+                    "stack-gap-lg": "1.5rem",
+                    "stack-gap-md": "1rem"
+            },
+            "fontFamily": {
+                    "label-caps": [
+                            "Inter"
+                    ],
+                    "metadata": [
+                            "Inter"
+                    ],
+                    "metric-lg-mobile": [
+                            "Inter"
+                    ],
+                    "headline-md": [
+                            "Inter"
+                    ],
+                    "metric-lg": [
+                            "Inter"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ]
+            },
+            "fontSize": {
+                    "label-caps": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "metadata": [
+                            "13px",
+                            {
+                                    "lineHeight": "18px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "metric-lg-mobile": [
+                            "28px",
+                            {
+                                    "lineHeight": "34px",
+                                    "letterSpacing": "-0.01em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-md": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "600"
+                            }
+                    ],
+                    "metric-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ]
+            }
+        },
+        },
+      }
+    </script>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Prevent scroll bounce on iOS when fixed bottom bar is present */
+        html, body { overscroll-behavior-y: none; }
+        /* Hide scrollbar for clean aesthetic */
+        ::-webkit-scrollbar { display: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col relative pb-[calc(4rem+env(safe-area-inset-bottom))]">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim fixed top-0 w-full z-50 border-b border-outline-variant dark:border-on-surface-variant flex justify-between items-center px-container-padding h-16 w-full pt-safe">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed-dim" data-icon="analytics" data-weight="fill" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">ChatInsights</h1>
+</div>
+<div class="flex items-center gap-3">
+<div class="text-secondary dark:text-secondary-fixed-dim font-label-caps text-label-caps">Ask ChatInsights</div>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full object-cover border border-outline-variant" data-alt="A small, circular avatar portrait of a modern business owner with a friendly expression. Soft, bright lighting against a clean white background. Minimalist and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHkw23shTWaM7J7wElBer5bLRQ-pcmVAVpR-Yw_v2k3MGb2i7iOsMODTYcQU8m_fiQnva4jNNEP5RLlgTO2juQtudz1PZ_CvKyz2RdS9MVNT8l9RFSJH2yKon4lv4EcbAd-zy4dmDx-WMO7AgW2iBvVMdXX_M9kko_hOlVGCOznryXHmdPQ0mAZ29xPWhXuW2t0QT87wHjJfTzUgY-JxxVj0LROAUa_oDYo_inBSZ2EAKlXvl84XI"/>
+</div>
+</header>
+<!-- Main Content Area (Canvas) -->
+<main class="flex-grow px-container-padding pt-20 pb-40 overflow-y-auto max-w-4xl mx-auto w-full">
+<!-- Intro Card / Greeting -->
+<div class="bg-surface-container-lowest border border-[#F1F5F9] rounded-xl p-card-padding shadow-sm mb-stack-gap-lg mt-stack-gap-md relative overflow-hidden group hover:shadow-md transition-shadow">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary" data-icon="smart_toy">smart_toy</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2">What can I help you with today?</h2>
+<p class="font-body-md text-body-md text-secondary mb-4">I can answer questions using your available business data. Try asking about:</p>
+<ul class="font-body-md text-body-md text-secondary space-y-2">
+<li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-primary block"></span> Known revenue</li>
+<li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-primary block"></span> Orders and their status</li>
+<li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-primary block"></span> Top products</li>
+<li class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-primary block"></span> Customers and inquiries</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Conversation History (Simulated) -->
+<div class="space-y-stack-gap-md mb-stack-gap-lg">
+<!-- User Message -->
+<div class="flex justify-end mb-4">
+<div class="bg-primary text-on-primary rounded-2xl rounded-tr-sm px-4 py-3 max-w-[85%] font-body-md text-body-md shadow-sm">
+                    What is my known revenue?
+                </div>
+</div>
+<!-- AI Assistant Response (AI Evidence Bubble) -->
+<div class="flex justify-start mb-4">
+<div class="bg-[#F8FAFC] border-l-2 border-primary rounded-r-xl rounded-bl-xl p-4 max-w-[90%] shadow-[0_2px_4px_rgba(30,41,59,0.05)] relative">
+<div class="flex items-center gap-2 mb-2 text-primary font-label-caps text-label-caps">
+<span class="material-symbols-outlined text-[16px]" data-icon="insights">insights</span> Data Evidence
+                    </div>
+<div class="font-body-md text-body-md text-on-surface mb-3">
+                        Your known revenue is <span class="font-bold">Rs. 45,000</span>.
+                    </div>
+<div class="bg-surface-container-low rounded-lg p-3 text-secondary font-metadata text-metadata flex items-start gap-2 border border-surface-variant">
+<span class="material-symbols-outlined text-[16px] shrink-0 mt-0.5" data-icon="info">info</span>
+<span>2 confirmed orders have amounts unavailable, so this may not represent your complete revenue.</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Starter Question Chips -->
+<div class="flex flex-col gap-2 mt-auto">
+<p class="font-label-caps text-label-caps text-secondary mb-1 px-1 uppercase tracking-wider">Suggested Queries</p>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant hover:border-primary hover:text-primary transition-colors rounded-full font-metadata text-metadata text-on-surface-variant text-left shadow-sm active:scale-95 duration-150">
+                    How many confirmed orders do I have?
+                </button>
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant hover:border-primary hover:text-primary transition-colors rounded-full font-metadata text-metadata text-on-surface-variant text-left shadow-sm active:scale-95 duration-150">
+                    What is my known revenue?
+                </button>
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant hover:border-primary hover:text-primary transition-colors rounded-full font-metadata text-metadata text-on-surface-variant text-left shadow-sm active:scale-95 duration-150">
+                    What are my top products?
+                </button>
+<button class="px-4 py-2 bg-surface-container-lowest border border-outline-variant hover:border-primary hover:text-primary transition-colors rounded-full font-metadata text-metadata text-on-surface-variant text-left shadow-sm active:scale-95 duration-150">
+                    mage confirmed orders keeyak thiyenawada?
+                </button>
+</div>
+</div>
+</main>
+<!-- Floating Input Bar -->
+<div class="fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 w-full px-container-padding pb-4 bg-gradient-to-t from-background via-background to-transparent pt-8 z-40 pointer-events-none">
+<div class="max-w-4xl mx-auto pointer-events-auto">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-full p-1.5 flex items-center shadow-lg transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+<button class="p-2 text-secondary hover:text-primary hover:bg-surface-container-low rounded-full transition-colors flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined" data-icon="attach_file">attach_file</span>
+</button>
+<input class="flex-grow bg-transparent border-none focus:ring-0 font-body-md text-body-md text-on-surface placeholder:text-secondary-fixed-dim px-2" placeholder="Ask in English, සිංහල or Singlish..." type="text"/>
+<button class="p-2.5 bg-primary text-on-primary hover:bg-primary-container active:scale-95 transition-all rounded-full flex items-center justify-center shrink-0 ml-1">
+<span class="material-symbols-outlined text-[20px]" data-icon="send">send</span>
+</button>
+</div>
+</div>
+</div>
+<!-- BottomNavBar -->
+<nav class="bg-surface-container-lowest dark:bg-inverse-surface border-t border-outline-variant dark:border-on-surface-variant fixed bottom-0 w-full z-50 pb-safe flex justify-around items-center h-16 px-2">
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:text-primary-container dark:hover:text-primary-fixed transition-colors active:scale-95 duration-150 w-full h-full" href="#">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="dashboard">dashboard</span>
+<span class="font-label-caps text-label-caps">Overview</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:text-primary-container dark:hover:text-primary-fixed transition-colors active:scale-95 duration-150 w-full h-full" href="#">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="upload_file">upload_file</span>
+<span class="font-label-caps text-label-caps">Imports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:text-primary-container dark:hover:text-primary-fixed transition-colors active:scale-95 duration-150 w-full h-full" href="#">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="shopping_bag">shopping_bag</span>
+<span class="font-label-caps text-label-caps">Orders</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim hover:text-primary-container dark:hover:text-primary-fixed transition-colors active:scale-95 duration-150 w-full h-full" href="#">
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="forum">forum</span>
+<span class="font-label-caps text-label-caps">Inquiries</span>
+</a>
+<!-- Active Tab: Assistant -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed-dim font-bold active:scale-95 transition-transform duration-150 w-full h-full relative" href="#">
+<div class="absolute top-0 w-8 h-1 bg-primary rounded-b-full"></div>
+<span class="material-symbols-outlined mb-1 text-[24px]" data-icon="smart_toy" data-weight="fill" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+<span class="font-label-caps text-label-caps">Assistant</span>
+</a>
+</nav>
+</body></html>

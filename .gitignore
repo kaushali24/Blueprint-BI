@@ -84,3 +84,8 @@ logs/
 # Temporary extraction test files
 backend/*.txt
 backend/*.zip
+
+# Root temporary test results
+*smoke*.txt
+*results*.txt
+*out*.txt
