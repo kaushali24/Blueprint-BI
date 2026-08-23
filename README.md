@@ -603,12 +603,16 @@ source .venv/bin/activate
 ```
 Install dependencies:
 
-```
+```bash
 pip install -r requirements.txt
 ```
-Start the backend using the project's configured FastAPI/LangGraph development command.
+Make sure you have a `.env` file in the `backend` directory containing your API keys (e.g., `GOOGLE_API_KEY`).
 
-> The exact command may change as the backend architecture is implemented. Keep this section synchronized with the actual project configuration.
+Start the backend server:
+
+```bash
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000 --env-file .env
+```
 
 ---
 
@@ -651,19 +655,19 @@ DocumentPurpose`README.md`Project overview, setup, scope, and development roadma
 ---
 
 # Current Status
-🚧 **MVP Development — AI LaunchPad**
+✅ **MVP Development — AI LaunchPad**
 
 ### Current focus
-Building the three-week MVP according to the SRS and OpenSpec specifications.
+The core three-week MVP development is **successfully completed** according to the SRS and OpenSpec specifications! 
 
-### Development priorities
+### Development achievements
 
-1. WhatsApp data ingestion
-2. Reliable structured data storage
-3. AI business information extraction
-4. Business analytics
-5. AI business assistant
-6. End-to-end MVP validation
+1. ✅ WhatsApp data ingestion
+2. ✅ Reliable structured data storage
+3. ✅ AI business information extraction
+4. ✅ Business analytics
+5. ✅ AI business assistant
+6. ✅ End-to-end MVP validation
 
 ---
 
@@ -724,4 +728,4 @@ Other potential future capabilities include:
 See the relevant project/license files for licensing information.
 
 ---
-**Last Updated:** 2026-08-10
+**Last Updated:** 2026-08-23
