@@ -31,6 +31,7 @@ from app.database.models import (
     Business,
     Customer,
     ExtractionEvidence,
+    ExtractionTarget,
     Inquiry,
     Message,
     Order,
@@ -212,12 +213,18 @@ def list_orders(
     Derives customer_name from Order.customer (nullable join).
     Derives first_product_name from the first OrderItem by insertion order.
     """
+    from sqlalchemy.orm import joinedload
     stmt = (
         select(Order)
+        .options(
+            joinedload(Order.customer),
+            joinedload(Order.order_items),
+            joinedload(Order.extraction_target).joinedload(ExtractionTarget.end_message)
+        )
         .where(Order.business_id == business.id)
         .order_by(Order.created_at.desc(), Order.id.desc())
     )
-    orders = db.scalars(stmt).all()
+    orders = db.scalars(stmt).unique().all()
 
     results: list[OrderSummaryDTO] = []
     for order in orders:
@@ -228,13 +235,18 @@ def list_orders(
         first_item: Optional[OrderItem] = order.order_items[0] if order.order_items else None
         first_product_name: Optional[str] = first_item.product_name if first_item else None
 
+        # Use the end of the episode as the date, if available.
+        order_date = order.created_at
+        if order.extraction_target and order.extraction_target.end_message and order.extraction_target.end_message.sent_at:
+            order_date = order.extraction_target.end_message.sent_at
+
         results.append(
             OrderSummaryDTO(
                 id=order.id,
                 order_number=order.order_number,
                 status=order.status,
                 total_amount=order.total_amount,  # NULL stays NULL
-                created_at=order.created_at.isoformat(),
+                created_at=order_date.isoformat(),
                 customer_name=customer_name,
                 first_product_name=first_product_name,
             )
@@ -252,7 +264,24 @@ def get_order(
     Returns a single order with all its items.
     Cross-business order IDs return 404 — same as nonexistent.
     """
-    order = _get_order_for_business(order_id, business.id, db)
+    from sqlalchemy.orm import joinedload
+    stmt = (
+        select(Order)
+        .options(
+            joinedload(Order.customer),
+            joinedload(Order.order_items),
+            joinedload(Order.extraction_target).joinedload(ExtractionTarget.end_message)
+        )
+        .where(Order.id == order_id)
+    )
+    order = db.scalars(stmt).unique().one_or_none()
+    
+    if order is None or order.business_id != business.id:
+        raise HTTPException(
+            status_code=404,
+            detail={"errors": [f"Order {order_id} was not found."]},
+        )
+        
     customer_name: Optional[str] = order.customer.name if order.customer else None
 
     items = [
@@ -265,12 +294,16 @@ def get_order(
         for item in order.order_items
     ]
 
+    order_date = order.created_at
+    if order.extraction_target and order.extraction_target.end_message and order.extraction_target.end_message.sent_at:
+        order_date = order.extraction_target.end_message.sent_at
+
     return OrderDetailDTO(
         id=order.id,
         order_number=order.order_number,
         status=order.status,
         total_amount=order.total_amount,  # NULL stays NULL
-        created_at=order.created_at.isoformat(),
+        created_at=order_date.isoformat(),
         customer_name=customer_name,
         items=items,
     )
@@ -344,21 +377,33 @@ def list_inquiries(
     Derives customer_name from Inquiry.customer (nullable join).
     Does not expose confidence or internal extraction metadata.
     """
+    from sqlalchemy.orm import joinedload
     stmt = (
         select(Inquiry)
+        .options(
+            joinedload(Inquiry.customer),
+            joinedload(Inquiry.extraction_target).joinedload(ExtractionTarget.end_message)
+        )
         .where(Inquiry.business_id == business.id)
         .order_by(Inquiry.created_at.desc(), Inquiry.id.desc())
     )
-    inquiries = db.scalars(stmt).all()
-
-    return [
-        InquirySummaryDTO(
-            id=inq.id,
-            inquiry_type=inq.inquiry_type,
-            summary=inq.summary,
-            status=inq.status,
-            created_at=inq.created_at.isoformat(),
-            customer_name=inq.customer.name if inq.customer else None,
+    inquiries = db.scalars(stmt).unique().all()
+    
+    results: list[InquirySummaryDTO] = []
+    for inq in inquiries:
+        inquiry_date = inq.created_at
+        if inq.extraction_target and inq.extraction_target.end_message and inq.extraction_target.end_message.sent_at:
+            inquiry_date = inq.extraction_target.end_message.sent_at
+            
+        results.append(
+            InquirySummaryDTO(
+                id=inq.id,
+                inquiry_type=inq.inquiry_type,
+                summary=inq.summary,
+                status=inq.status,
+                created_at=inquiry_date.isoformat(),
+                customer_name=inq.customer.name if inq.customer else None,
+            )
         )
-        for inq in inquiries
-    ]
+
+    return results

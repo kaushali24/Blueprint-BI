@@ -2,6 +2,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from sqlalchemy.exc import OperationalError
 

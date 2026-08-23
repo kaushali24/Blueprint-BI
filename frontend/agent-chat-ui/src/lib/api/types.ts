@@ -4,6 +4,8 @@ export interface RecentOrderDTO {
   status: string;
   total_amount: string | null;
   created_at: string;
+  customer_name: string | null;
+  first_product_name: string | null;
 }
 
 export interface ProductMetricItemDTO {

@@ -3,7 +3,7 @@ from decimal import Decimal
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.database.models import Order, OrderItem, Inquiry, Customer, Feedback
+from app.database.models import Order, OrderItem, Inquiry, Customer, Feedback, ExtractionTarget
 from app.analytics.schemas import (
     BusinessAnalyticsReportDTO,
     CustomerMetricsDTO,
@@ -42,7 +42,12 @@ class AnalyticsService:
         orders_with_unknown_revenue_count = revenue_result.unknown_count if revenue_result and revenue_result.unknown_count is not None else 0
 
         # Recent orders
-        recent_orders_query = select(Order).where(
+        from sqlalchemy.orm import joinedload
+        recent_orders_query = select(Order).options(
+            joinedload(Order.customer),
+            joinedload(Order.order_items),
+            joinedload(Order.extraction_target).joinedload(ExtractionTarget.end_message)
+        ).where(
             Order.business_id == business_id
         ).order_by(
             Order.created_at.desc(),
@@ -50,14 +55,24 @@ class AnalyticsService:
         ).limit(5)
         
         recent_orders = []
-        for order in session.scalars(recent_orders_query):
+        for order in session.scalars(recent_orders_query).unique():
+            customer_name = order.customer.name if order.customer else None
+            first_item = order.order_items[0] if order.order_items else None
+            first_product_name = first_item.product_name if first_item else None
+            
+            order_date = order.created_at
+            if order.extraction_target and order.extraction_target.end_message and order.extraction_target.end_message.sent_at:
+                order_date = order.extraction_target.end_message.sent_at
+                
             recent_orders.append(
                 RecentOrderDTO(
                     id=order.id,
                     order_number=order.order_number,
                     status=order.status,
                     total_amount=order.total_amount,
-                    created_at=order.created_at.isoformat()
+                    created_at=order_date.isoformat(),
+                    customer_name=customer_name,
+                    first_product_name=first_product_name
                 )
             )
 

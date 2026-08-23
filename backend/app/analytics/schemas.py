@@ -10,6 +10,8 @@ class RecentOrderDTO(BaseModel):
     status: str
     total_amount: Decimal | None
     created_at: str
+    customer_name: str | None = None
+    first_product_name: str | None = None
 
 
 class RecentInquiryDTO(BaseModel):

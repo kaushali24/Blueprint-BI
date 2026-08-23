@@ -64,13 +64,44 @@ export default function ImportResultCard({ state, onReset }: ImportResultCardPro
             <p>
               Your WhatsApp conversations were processed, but some items need attention.
             </p>
-            {state.result.warnings && state.result.warnings.length > 0 && (
-              <ul className="text-left bg-ci-tertiary-fixed/40 p-3 rounded-lg mt-2 list-disc list-inside text-[13px] text-ci-on-tertiary-fixed-variant border border-ci-tertiary-fixed-dim/40">
-                {state.result.warnings.map((warn, i) => (
-                  <li key={i}>{warn}</li>
-                ))}
-              </ul>
-            )}
+            {(() => {
+              const warnings = state.result.warnings ?? [];
+              const mediaWarnings = warnings.filter((w) =>
+                w.toLowerCase().includes("advanced media interpretation was not performed"),
+              );
+              const otherWarnings = warnings.filter(
+                (w) => !w.toLowerCase().includes("advanced media interpretation was not performed"),
+              );
+
+              return (
+                <>
+                  {mediaWarnings.length > 0 && (
+                    <div className="text-left bg-ci-surface-container-high/60 p-3 rounded-lg mt-2 text-[13px] text-ci-on-surface-variant border border-ci-outline-variant/40 flex gap-2.5 items-start">
+                      <Icons.info className="w-4 h-4 mt-0.5 shrink-0 text-ci-on-surface-variant/70" aria-hidden="true" />
+                      <div>
+                        <p className="font-medium text-ci-on-surface">
+                          {mediaWarnings.length === 1
+                            ? "Some media wasn\u2019t analyzed"
+                            : `${mediaWarnings.length} media items weren\u2019t analyzed`}
+                        </p>
+                        <p className="mt-1">
+                          This chat contains images or voice messages. ChatInsights imported the
+                          conversation successfully, but advanced media interpretation isn&apos;t
+                          included in this MVP.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  {otherWarnings.length > 0 && (
+                    <ul className="text-left bg-ci-tertiary-fixed/40 p-3 rounded-lg mt-2 list-disc list-inside text-[13px] text-ci-on-tertiary-fixed-variant border border-ci-tertiary-fixed-dim/40">
+                      {otherWarnings.map((warn, i) => (
+                        <li key={i}>{warn}</li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              );
+            })()}
           </>
         )}
 

@@ -267,6 +267,8 @@ class Inquiry(Base):
     business: Mapped[Business] = relationship(back_populates="inquiries")
     customer: Mapped[Optional[Customer]] = relationship(back_populates="inquiries")
     conversation: Mapped[Optional[Conversation]] = relationship(back_populates="inquiries")
+    extraction_target_id: Mapped[Optional[int]] = mapped_column(ForeignKey("extraction_target.id"), nullable=True, index=True)
+    extraction_target: Mapped[Optional["ExtractionTarget"]] = relationship(back_populates="inquiries")
     evidence: Mapped[list["ExtractionEvidence"]] = relationship(
         back_populates="inquiry",
         foreign_keys="ExtractionEvidence.inquiry_id",
@@ -292,6 +294,8 @@ class Order(Base):
     business: Mapped[Business] = relationship(back_populates="orders")
     customer: Mapped[Optional[Customer]] = relationship(back_populates="orders")
     conversation: Mapped[Optional[Conversation]] = relationship(back_populates="orders")
+    extraction_target_id: Mapped[Optional[int]] = mapped_column(ForeignKey("extraction_target.id"), nullable=True, index=True)
+    extraction_target: Mapped[Optional["ExtractionTarget"]] = relationship(back_populates="orders")
     order_items: Mapped[list["OrderItem"]] = relationship(back_populates="order", cascade="all, delete-orphan")
     feedbacks: Mapped[list["Feedback"]] = relationship(back_populates="order", cascade="all, delete-orphan")
     evidence: Mapped[list["ExtractionEvidence"]] = relationship(
@@ -336,6 +340,8 @@ class Feedback(Base):
     customer: Mapped[Optional[Customer]] = relationship(back_populates="feedbacks")
     conversation: Mapped[Optional[Conversation]] = relationship(back_populates="feedbacks")
     order: Mapped[Optional[Order]] = relationship(back_populates="feedbacks")
+    extraction_target_id: Mapped[Optional[int]] = mapped_column(ForeignKey("extraction_target.id"), nullable=True, index=True)
+    extraction_target: Mapped[Optional["ExtractionTarget"]] = relationship(back_populates="feedbacks")
     evidence: Mapped[list["ExtractionEvidence"]] = relationship(
         back_populates="feedback",
         foreign_keys="ExtractionEvidence.feedback_id",
@@ -365,6 +371,8 @@ class ExtractedFact(Base):
     business: Mapped[Business] = relationship(back_populates="extracted_facts")
     customer: Mapped[Optional[Customer]] = relationship(back_populates="extracted_facts")
     conversation: Mapped[Optional[Conversation]] = relationship(back_populates="extracted_facts")
+    extraction_target_id: Mapped[Optional[int]] = mapped_column(ForeignKey("extraction_target.id"), nullable=True, index=True)
+    extraction_target: Mapped[Optional["ExtractionTarget"]] = relationship(back_populates="extracted_facts")
     evidence: Mapped[list["ExtractionEvidence"]] = relationship(
         back_populates="extracted_fact",
         foreign_keys="ExtractionEvidence.extracted_fact_id",
@@ -412,21 +420,33 @@ class ExtractionEvidence(Base):
 
 
 class ExtractionTarget(Base):
-    """Ledger for tracking AI extraction per message and business to ensure idempotency."""
+    """Ledger for tracking AI extraction per business episode to ensure idempotency."""
     
     __tablename__ = "extraction_target"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    message_id: Mapped[int] = mapped_column(ForeignKey("message.id"), nullable=False, index=True)
     business_id: Mapped[int] = mapped_column(ForeignKey("business.id"), nullable=False, index=True)
+    conversation_id: Mapped[int] = mapped_column(ForeignKey("conversation.id"), nullable=False, index=True)
+    start_message_id: Mapped[int] = mapped_column(ForeignKey("message.id"), nullable=False, index=True)
+    end_message_id: Mapped[int] = mapped_column(ForeignKey("message.id"), nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
     attempted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     failure_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
+    inquiries: Mapped[list["Inquiry"]] = relationship(back_populates="extraction_target", cascade="all, delete-orphan")
+    orders: Mapped[list["Order"]] = relationship(back_populates="extraction_target", cascade="all, delete-orphan")
+    feedbacks: Mapped[list["Feedback"]] = relationship(back_populates="extraction_target", cascade="all, delete-orphan")
+    extracted_facts: Mapped[list["ExtractedFact"]] = relationship(back_populates="extraction_target", cascade="all, delete-orphan")
+
+    start_message: Mapped["Message"] = relationship(foreign_keys=[start_message_id])
+    end_message: Mapped["Message"] = relationship(foreign_keys=[end_message_id])
+    business: Mapped["Business"] = relationship()
+    conversation: Mapped["Conversation"] = relationship()
+
     __table_args__ = (
-        UniqueConstraint("message_id", "business_id", name="uq_extraction_target_message_business"),
+        UniqueConstraint("business_id", "conversation_id", "start_message_id", name="uq_extraction_target_business_conv_start"),
     )
 
 

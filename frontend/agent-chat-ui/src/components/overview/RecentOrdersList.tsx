@@ -42,7 +42,9 @@ export default function RecentOrdersList({ orders }: RecentOrdersListProps) {
           <div key={order.id} className="bg-ci-surface-container-lowest border border-ci-outline-variant rounded-xl p-card-padding flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 min-w-0">
             <div className="flex flex-col gap-1 w-full sm:w-auto min-w-0">
               <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <span className="body-md font-semibold text-ci-on-surface break-words">{order.order_number || `Order #${order.id}`}</span>
+                <span className="body-md font-semibold text-ci-on-surface break-words">
+                  {order.order_number || (order.customer_name ? `Order from ${order.customer_name}` : (order.first_product_name || `Order #${order.id}`))}
+                </span>
                 <StatusBadge status={order.status} />
               </div>
             </div>
