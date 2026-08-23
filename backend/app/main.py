@@ -10,6 +10,7 @@ from app.database.models import Business
 from app.coordinator import ImportCoordinator
 from app.ingestion.validator import validate_zip_package
 from app.assistant.graph import app_graph
+from app.api.business_data import router as business_data_router
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
 
@@ -18,6 +19,7 @@ class ChatRequest(BaseModel):
     message: str
 
 app = FastAPI(title="Blueprint BI API")
+app.include_router(business_data_router)
 
 
 @app.post("/api/v1/whatsapp/imports")

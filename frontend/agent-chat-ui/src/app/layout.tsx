@@ -3,6 +3,9 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import React from "react";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { BusinessProvider } from "@/providers/BusinessProvider";
+import AppShell from "@/components/layout/AppShell";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,8 +14,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Agent Chat",
-  description: "Agent Chat UX by LangChain",
+  title: "ChatInsights",
+  description: "ChatInsights Dashboard",
 };
 
 export default function RootLayout({
@@ -22,8 +25,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <NuqsAdapter>{children}</NuqsAdapter>
+      <body className={`${inter.className} antialiased bg-ci-background text-ci-on-background`}>
+        <NuqsAdapter>
+          <BusinessProvider>
+            <AppShell>{children}</AppShell>
+            <Toaster />
+          </BusinessProvider>
+        </NuqsAdapter>
       </body>
     </html>
   );

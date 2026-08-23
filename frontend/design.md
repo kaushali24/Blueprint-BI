@@ -17,8 +17,7 @@ The approved high-fidelity Stitch designs are the sole visual/UX reference. All 
 ## 2. Goals
 
 - Build 6 screens that exactly reproduce the Stitch visual design inside the existing Next.js app.
-- Integrate with the 2 verified FastAPI endpoints.
-- Identify and specify the 5 minimal GET endpoints required before backend data can be rendered.
+- Integrate with the 7 verified FastAPI endpoints.
 - Define a typed API client layer, a clean route structure, and a reusable component plan.
 - Ground all design token decisions in the actual Stitch `tailwind.config` extracted from the exported `code.html` files.
 
@@ -141,6 +140,12 @@ The Stitch HTML uses **Google Material Symbols Outlined** (variable font). The e
 - **Not found** (`404`): `{ "errors": ["Business 1 was not found."] }`.
 - **business_id handling**: Received in JSON body. Passed as LangGraph `configurable.business_id`.
 
+#### `GET /api/v1/businesses/{business_id}/analytics`
+#### `GET /api/v1/businesses/{business_id}/orders`
+#### `GET /api/v1/businesses/{business_id}/orders/{order_id}`
+#### `GET /api/v1/businesses/{business_id}/orders/{order_id}/evidence`
+#### `GET /api/v1/businesses/{business_id}/inquiries`
+
 ### Confirmed Service Methods (exist as Python, NOT as HTTP endpoints)
 
 | Service | Method | Status |
@@ -162,20 +167,20 @@ The Stitch HTML uses **Google Material Symbols Outlined** (variable font). The e
 
 | Screen | UI Data Required | Backend Service | HTTP Endpoint | Gap |
 |---|---|---|---|---|
-| **Overview** | `known_total_revenue`, `orders_with_unknown_revenue_count`, confirmed/pending counts, customer count, open inquiry count, top products, recent orders | `AnalyticsService.get_business_analytics_report()` | ❌ None | **MISSING** |
+| **Overview** | `known_total_revenue`, `orders_with_unknown_revenue_count`, confirmed/pending counts, customer count, open inquiry count, top products, recent orders | `AnalyticsService.get_business_analytics_report()` | ✅ `GET /analytics` | **IMPLEMENTED** |
 | **Imports** | Upload form, progress state, result (`status`, `is_successful`, `errors`, `warnings`) | `ImportCoordinator` | ✅ `POST /api/v1/whatsapp/imports` | None |
 | **Imports (history)** | List of past `ImportBatch` records | `ImportBatch` model | ❌ None | **MISSING** |
-| **Orders** | List: customer name, product name, status, `total_amount`, `created_at` | `Order`, `Customer`, `OrderItem` models | ❌ None | **MISSING** |
-| **Order Details** | Full `Order` + `OrderItem`s + linked `Customer.name` | ORM relationships | ❌ None | **MISSING** |
-| **Order Evidence** | `ExtractionEvidence.evidence_text`, `Message.content`, `Message.sent_at`, `Participant.display_name` | ORM relationships | ❌ None | **MISSING** |
-| **Inquiries** | List: customer name, `inquiry_type`, `summary`, `status`, `created_at` | `Inquiry`, `Customer` models | ❌ None | **MISSING** |
+| **Orders** | List: customer name, product name, status, `total_amount`, `created_at` | `Order`, `Customer`, `OrderItem` models | ✅ `GET /orders` | **IMPLEMENTED** |
+| **Order Details** | Full `Order` + `OrderItem`s + linked `Customer.name` | ORM relationships | ✅ `GET /orders/{id}` | **IMPLEMENTED** |
+| **Order Evidence** | `ExtractionEvidence.evidence_text`, `Message.content`, `Message.sent_at`, `Participant.display_name` | ORM relationships | ✅ `GET /orders/{id}/evidence` | **IMPLEMENTED** |
+| **Inquiries** | List: customer name, `inquiry_type`, `summary`, `status`, `created_at` | `Inquiry`, `Customer` models | ✅ `GET /inquiries` | **IMPLEMENTED** |
 | **Assistant** | Chat request/response | LangGraph via FastAPI | ✅ `POST /api/v1/assistant/chat` | None |
 
-**Summary**: 2 endpoints exist. 5 additional read-only GET endpoints must be added to the backend before full frontend data integration is possible.
+**Summary**: 7 endpoints exist. The read-only GET endpoints have been added to the backend. Import history remains deferred.
 
 ---
 
-## 7. Proposed Minimal API Additions
+## 7. Implemented Frontend Read API Contracts
 
 These 5 endpoints expose only existing, deterministic data. No new business logic.
 
@@ -205,7 +210,7 @@ Returns `BusinessAnalyticsReportDTO` (already defined in `backend/app/analytics/
 ### `GET /api/v1/businesses/{business_id}/orders`
 Returns a flat list of orders with joined customer name.
 
-**Proposed response**:
+**Response format**:
 ```json
 [
   {
@@ -223,7 +228,7 @@ Returns a flat list of orders with joined customer name.
 ### `GET /api/v1/businesses/{business_id}/orders/{order_id}`
 Returns full order detail with items.
 
-**Proposed response**:
+**Response format**:
 ```json
 {
   "id": 1,
@@ -241,19 +246,21 @@ Returns full order detail with items.
 ### `GET /api/v1/businesses/{business_id}/orders/{order_id}/evidence`
 Returns the WhatsApp message snippets that support this order. Sourced from `ExtractionEvidence` → `Message` → `Participant`.
 
-**Proposed response**:
+**Response format**:
 ```json
 [
   {
+    "evidence_text": "Customer ordered a 1kg chocolate cake.",
+    "message_content": "Hi, I'd like to order a 1kg chocolate cake for Saturday please.",
     "sender_name": "Nimali",
     "sender_type": "customer",
-    "content": "Hi, I'd like to order a 1kg chocolate cake for Saturday please.",
     "sent_at": "2023-10-24T09:55:00Z"
   },
   {
+    "evidence_text": "Business confirmed Rs. 4,500.",
+    "message_content": "Sure! That will be Rs. 4,500. Shall I confirm the order?",
     "sender_name": "Business",
     "sender_type": "business",
-    "content": "Sure! That will be Rs. 4,500. Shall I confirm the order?",
     "sent_at": "2023-10-24T09:56:00Z"
   }
 ]
@@ -262,7 +269,7 @@ Returns the WhatsApp message snippets that support this order. Sourced from `Ext
 ### `GET /api/v1/businesses/{business_id}/inquiries`
 Returns list of inquiries with customer name.
 
-**Proposed response**:
+**Response format**:
 ```json
 [
   {
@@ -335,7 +342,10 @@ The existing `src/app/api/[..._path]/route.ts` LangGraph proxy is **kept unchang
    - Caveat: `ⓘ 2 confirmed orders have Amount unavailable.` (`metadata`, `text-secondary`)
    - Must use `known_total_revenue` and `orders_with_unknown_revenue_count` directly.
    - If `orders_with_unknown_revenue_count === 0`, hide the caveat row.
-   - **Never** show `Rs. 0` when revenue is zero — show `Rs. 0` only if `known_total_revenue` is literally 0 AND `orders_with_unknown_revenue_count` is 0.
+   - If `known_total_revenue` is actually `Decimal("0")`, the UI may display Rs. 0.
+   - If an individual order amount is NULL, display "Amount unavailable".
+   - NULL must NEVER be converted to zero.
+   - `orders_with_unknown_revenue_count` determines whether known revenue may be incomplete.
 
 2. **Metrics Grid** — `grid grid-cols-2 md:grid-cols-4 gap-4`
    - Confirmed Orders (`status_counts.confirmed ?? 0`)
@@ -620,7 +630,7 @@ The existing `src/app/globals.css` uses shadcn CSS variables. These will be **ex
 --ci-inverse-primary: #6bd8cb;
 ```
 
-### Tailwind Extension (in `tailwind.config.js`)
+### Tailwind Extension (in `globals.css`)
 
 ```js
 // Add to theme.extend.colors
@@ -768,9 +778,10 @@ export interface OrderDetailDTO {
 }
 
 export interface EvidenceMessageDTO {
-  sender_name: string;
-  sender_type: "customer" | "business";
-  content: string;
+  evidence_text: string;
+  message_content: string | null;
+  sender_name: string | null;
+  sender_type: string | null;
   sent_at: string | null;
 }
 
@@ -802,9 +813,14 @@ export interface ChatResponseDTO {
 const API_BASE = process.env.NEXT_PUBLIC_FASTAPI_URL ?? "http://localhost:8000";
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+  const isFormData = init?.body instanceof FormData;
+  const headers = isFormData
+    ? { ...init?.headers }
+    : { "Content-Type": "application/json", ...init?.headers };
+
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...init?.headers },
     ...init,
+    headers,
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -835,8 +851,7 @@ export const api = {
     form.append("file", file);
     return apiFetch<ImportResultDTO>("/api/v1/whatsapp/imports", {
       method: "POST",
-      headers: {},  // Let browser set Content-Type with boundary
-      body: form,
+      body: form, // apiFetch handles headers for FormData
     });
   },
 
@@ -864,7 +879,7 @@ NEXT_PUBLIC_FASTAPI_URL=http://localhost:8000
 **Implementation**: `src/providers/BusinessProvider.tsx` — a React Context with a single constant.
 
 ```tsx
-const DEMO_BUSINESS_ID = 1;  // MVP constant — not auth-protected
+const DEMO_BUSINESS_ID = Number(process.env.NEXT_PUBLIC_DEMO_BUSINESS_ID ?? "1");  // MVP constant — not auth-protected
 
 const BusinessContext = createContext<{ businessId: number }>({ businessId: DEMO_BUSINESS_ID });
 
@@ -1028,7 +1043,7 @@ interface ErrorStateProps {
 
 ### Phase 1 — Foundation (prerequisite for all other phases)
 - Update `globals.css` with ChatInsights CSS custom properties.
-- Extend `tailwind.config.js` with `ci-*` color tokens and Stitch spacing/typography.
+- Extend `globals.css` with `ci-*` color tokens via the `@theme inline` directive.
 - Add `NEXT_PUBLIC_FASTAPI_URL` to `.env`.
 - Create `src/lib/api/types.ts` and `src/lib/api/client.ts`.
 - Create `src/providers/BusinessProvider.tsx`.
@@ -1042,7 +1057,7 @@ interface ErrorStateProps {
 - Wire to `api.getAnalytics()`.
 - Implement loading skeleton + empty + error states.
 
-> **Note**: Requires `GET /api/v1/businesses/{business_id}/analytics` on backend. Build with mock data first.
+> **Note**: Uses the implemented `GET /api/v1/businesses/{business_id}/analytics` backend endpoint.
 
 ### Phase 3 — Imports
 - Build `FileUploadCard`, `ImportProgress`, `ImportResultCard`.
