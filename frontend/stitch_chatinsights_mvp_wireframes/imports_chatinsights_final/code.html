@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>Imports - ChatInsights</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#2f1500",
+                        "secondary-container": "#dce0e4",
+                        "primary": "#00685f",
+                        "secondary": "#5a5f62",
+                        "background": "#f9f9ff",
+                        "primary-container": "#008378",
+                        "on-surface-variant": "#3d4947",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "surface-container": "#e7eeff",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#f9f9ff",
+                        "surface-container-high": "#dee8ff",
+                        "on-background": "#111c2d",
+                        "surface-tint": "#006a61",
+                        "tertiary": "#8d4b00",
+                        "on-primary-fixed": "#00201d",
+                        "surface-variant": "#d8e3fb",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#005049",
+                        "inverse-primary": "#6bd8cb",
+                        "secondary-fixed-dim": "#c3c7cb",
+                        "on-surface": "#111c2d",
+                        "primary-fixed": "#89f5e7",
+                        "surface-container-low": "#f0f3ff",
+                        "tertiary-container": "#b15f00",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-primary-container": "#f4fffc",
+                        "surface-container-highest": "#d8e3fb",
+                        "on-secondary-fixed-variant": "#43474b",
+                        "tertiary-fixed": "#ffdcc3",
+                        "on-secondary-container": "#5e6367",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#fffbff",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#6bd8cb",
+                        "inverse-on-surface": "#ecf1ff",
+                        "on-secondary-fixed": "#171c1f",
+                        "secondary-fixed": "#dfe3e7",
+                        "surface-dim": "#cfdaf2",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "outline-variant": "#bcc9c6",
+                        "inverse-surface": "#263143",
+                        "outline": "#6d7a77",
+                        "surface": "#f9f9ff",
+                        "on-secondary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-gap-sm": "0.5rem",
+                        "container-padding": "1rem",
+                        "card-padding": "1.25rem",
+                        "stack-gap-lg": "1.5rem",
+                        "stack-gap-md": "1rem"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["Inter"],
+                        "metadata": ["Inter"],
+                        "metric-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "metric-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "metadata": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "metric-lg-mobile": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "metric-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer utilities {
+            .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+            .pt-safe { padding-top: env(safe-area-inset-top); }
+            .material-symbols-outlined {
+                font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            }
+        }
+        
+        .upload-zone {
+            transition: all 0.3s ease;
+        }
+        
+        .upload-zone.dragover {
+            border-color: theme('colors.primary');
+            background-color: theme('colors.surface-container');
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md antialiased pt-safe">
+<!-- TopAppBar (Hidden on md for demonstration, showing full nav cluster on desktop if it was there, but strictly following JSON rules) -->
+<header class="fixed top-0 w-full z-50 bg-surface border-b border-outline-variant flex justify-between items-center px-container-padding h-16 w-full pt-safe md:hidden shadow-sm">
+<div class="flex items-center gap-2 text-primary"><span class="font-headline-md text-headline-md font-bold">ChatInsights</span></div>
+<button class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center overflow-hidden border border-outline-variant hover:bg-secondary-container transition-colors active:opacity-80 transition-opacity">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="A minimal, flat-design avatar of a small business owner. The portrait features a confident, smiling woman with short hair against a soft teal background. The aesthetic is clean, corporate, and modern, fitting a professional analytics dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6wzxCW7KxMyl0qbgB8Au3k1bpcya6fuJMKgBAIV-wrzKbjNXJfem_AwGNbD4ypvh45whW6Js4dgPzXHOsbhdqa6CnF7yv8bpbGvqZO--A3cP9mXVPAh-OMUzdGXfgGZhyeiQrxQtBC-KxgIBNjOdOp-ddJpODwx_R7KGv6C3SDhysH63oCInR9xwW1qOug2ZA0_wFhSztpqa20UI6CP7cTGq2aHI5wC4ubGFUNX8xjvmey-L2mX8"/>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 w-full max-w-3xl mx-auto px-container-padding pt-24 pb-32 flex flex-col gap-stack-lg relative">
+<!-- Background decorative element (Glassmorphism subtle blur) -->
+<div class="fixed top-20 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10 pointer-events-none"></div>
+<!-- Section 1: Header -->
+<section class="flex flex-col gap-stack-sm">
+<h1 class="font-headline-md text-headline-md text-on-surface">Upload directly from WhatsApp</h1>
+<p class="font-metadata text-metadata text-on-surface-variant max-w-lg">
+                Export your chat history as a ZIP file and upload it here to extract business insights.
+            </p>
+</section>
+<!-- Section 2: Instructions (Bento-style list) -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex flex-col gap-stack-md shadow-sm">
+<div class="flex items-center justify-between">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant tracking-wider">Quick Steps</h2>
+<a class="font-metadata text-metadata text-primary hover:text-primary-container transition-colors font-medium flex items-center gap-1 group" href="#">
+                    How do I export a WhatsApp chat?
+                    <span class="material-symbols-outlined text-[16px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-sm">
+<div class="flex gap-3 items-start p-3 bg-surface rounded-lg border border-outline-variant/50">
+<div class="w-6 h-6 rounded-full bg-surface-variant text-primary flex items-center justify-center font-label-caps text-[10px] shrink-0">1</div>
+<span class="font-metadata text-metadata text-on-surface">Open WhatsApp chat</span>
+</div>
+<div class="flex gap-3 items-start p-3 bg-surface rounded-lg border border-outline-variant/50">
+<div class="w-6 h-6 rounded-full bg-surface-variant text-primary flex items-center justify-center font-label-caps text-[10px] shrink-0">2</div>
+<span class="font-metadata text-metadata text-on-surface">Choose "Export chat"</span>
+</div>
+<div class="flex gap-3 items-start p-3 bg-surface rounded-lg border border-outline-variant/50">
+<div class="w-6 h-6 rounded-full bg-surface-variant text-primary flex items-center justify-center font-label-caps text-[10px] shrink-0">3</div>
+<span class="font-metadata text-metadata text-on-surface">Export without media</span>
+</div>
+<div class="flex gap-3 items-start p-3 bg-surface rounded-lg border border-outline-variant/50">
+<div class="w-6 h-6 rounded-full bg-surface-variant text-primary flex items-center justify-center font-label-caps text-[10px] shrink-0">4</div>
+<span class="font-metadata text-metadata text-on-surface">Upload here</span>
+</div>
+</div>
+<div class="bg-surface-container-low p-3 rounded-lg flex gap-2 items-center mt-1 border border-outline-variant/30">
+<span class="material-symbols-outlined text-secondary text-[18px]">info</span>
+<span class="font-metadata text-metadata text-secondary">Note: You don't need to extract the ZIP.</span>
+</div>
+</section>
+<!-- Section 4 & 5: Polished Upload Zone -->
+<section class="flex flex-col gap-stack-md">
+<!-- Default Upload Zone -->
+<label class="upload-zone relative block w-full border-2 border-dashed border-outline-variant rounded-xl p-8 bg-surface-container-lowest hover:bg-surface-container-low transition-colors cursor-pointer group text-center shadow-sm" for="file-upload">
+<input accept=".zip" class="sr-only" id="file-upload" type="file"/>
+<div class="flex flex-col items-center gap-stack-sm pointer-events-none">
+<div class="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[24px]">cloud_upload</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface font-medium mt-2">Drag &amp; Drop ZIP file or click to browse</p>
+<p class="font-metadata text-metadata text-secondary">Max file size: 50MB</p>
+</div>
+</label>
+<!-- File Selected State (Simulated for visual reference) -->
+<div class="hidden bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex flex-col gap-stack-md shadow-sm relative overflow-hidden" id="file-selected-state">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-surface-variant flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[20px]">folder_zip</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-medium truncate max-w-[200px] md:max-w-xs">whatsapp_export_nimali.zip</span>
+<span class="font-metadata text-metadata text-secondary">Ready to import (2.1 MB)</span>
+</div>
+</div>
+<button class="text-secondary hover:text-error transition-colors p-2 rounded-full hover:bg-error-container/20">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<button class="w-full bg-primary hover:bg-primary-container text-on-primary font-body-md text-body-md font-medium py-3 px-4 rounded-lg flex justify-center items-center gap-2 transition-all shadow-sm active:scale-[0.98]">
+<span class="material-symbols-outlined text-[18px]">publish</span>
+                    Import Conversations
+                </button>
+</div>
+<script>
+                // Minimal inline JS to toggle upload states for demonstration
+                const uploadZone = document.querySelector('.upload-zone');
+                const fileSelectedState = document.getElementById('file-selected-state');
+                const fileInput = document.getElementById('file-upload');
+                
+                uploadZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadZone.classList.add('dragover');
+                });
+                
+                uploadZone.addEventListener('dragleave', () => {
+                    uploadZone.classList.remove('dragover');
+                });
+                
+                uploadZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadZone.classList.remove('dragover');
+                    // Simulate file drop
+                    uploadZone.style.display = 'none';
+                    fileSelectedState.style.display = 'flex';
+                });
+                
+                fileInput.addEventListener('change', () => {
+                    if (fileInput.files.length > 0) {
+                        uploadZone.style.display = 'none';
+                        fileSelectedState.style.display = 'flex';
+                    }
+                });
+                
+                fileSelectedState.querySelector('.text-secondary.hover\\:text-error').addEventListener('click', () => {
+                    fileInput.value = '';
+                    fileSelectedState.style.display = 'none';
+                    uploadZone.style.display = 'block';
+                });
+            </script>
+</section>
+<!-- Section 6: Recent Imports list -->
+<section class="flex flex-col gap-stack-sm mt-4">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant tracking-wider mb-2">Recent Imports</h3>
+<div class="flex flex-col gap-2">
+<!-- Item 1 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-3 flex justify-between items-center hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+</div>
+<div class="flex flex-col">
+<span class="font-metadata text-metadata text-on-surface font-medium truncate max-w-[150px] md:max-w-xs">whatsapp_export_august.zip</span>
+<span class="font-metadata text-[11px] text-secondary">Aug 15</span>
+</div>
+</div>
+<div class="px-2 py-1 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center gap-1">
+<div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+<span class="font-label-caps text-[10px] text-on-surface-variant">Completed</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-3 flex justify-between items-center hover:bg-surface-container-low transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+</div>
+<div class="flex flex-col">
+<span class="font-metadata text-metadata text-on-surface font-medium truncate max-w-[150px] md:max-w-xs">business_chat_logs.zip</span>
+<span class="font-metadata text-[11px] text-secondary">Aug 10</span>
+</div>
+</div>
+<div class="px-2 py-1 rounded-full bg-surface-container-high border border-outline-variant/30 flex items-center gap-1">
+<div class="w-1.5 h-1.5 rounded-full bg-primary"></div>
+<span class="font-label-caps text-[10px] text-on-surface-variant">Completed</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 pb-safe md:hidden bg-surface-container-lowest border-t border-outline-variant flex justify-around items-center h-16 px-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+<!-- Overview (Inactive) -->
+<a class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors w-16 group" href="#">
+<span class="material-symbols-outlined mb-1 group-active:scale-95 transition-transform duration-150">dashboard</span>
+<span class="font-label-caps text-label-caps">Overview</span>
+</a>
+<!-- Imports (Active) -->
+<a class="flex flex-col items-center justify-center text-primary font-bold w-16 group relative" href="#">
+<div class="absolute -top-3 w-8 h-1 bg-primary rounded-b-full"></div>
+<span class="material-symbols-outlined mb-1 group-active:scale-95 transition-transform duration-150" style="font-variation-settings: 'FILL' 1;">upload_file</span>
+<span class="font-label-caps text-label-caps">Imports</span>
+</a>
+<!-- Orders (Inactive) -->
+<a class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors w-16 group" href="#">
+<span class="material-symbols-outlined mb-1 group-active:scale-95 transition-transform duration-150">shopping_bag</span>
+<span class="font-label-caps text-label-caps">Orders</span>
+</a>
+<!-- Inquiries (Inactive) -->
+<a class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors w-16 group" href="#">
+<span class="material-symbols-outlined mb-1 group-active:scale-95 transition-transform duration-150">forum</span>
+<span class="font-label-caps text-label-caps">Inquiries</span>
+</a>
+<!-- Assistant (Inactive) -->
+<a class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors w-16 group" href="#">
+<span class="material-symbols-outlined mb-1 group-active:scale-95 transition-transform duration-150">smart_toy</span>
+<span class="font-label-caps text-label-caps">Assistant</span>
+</a>
+</nav>
+</body></html>

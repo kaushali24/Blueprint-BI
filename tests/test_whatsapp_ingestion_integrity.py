@@ -452,3 +452,83 @@ def test_raw_ingestion_leaves_participant_type_null_and_preserves_associations()
         assert messages[1].participant_id == participants[1].id
         assert messages[1].import_batch_id == result.import_batch_id
 
+
+def test_identical_messages_in_same_minute_are_preserved():
+    engine = _make_engine()
+    business_id = _create_business(engine, "Dedupe Bakery", "dedupe-bakery")
+    service = IngestionService(engine)
+
+    # Identical messages in same minute
+    chat = (
+        "2024-01-02, 10:32 - Customer: ok\n"
+        "2024-01-02, 10:32 - Customer: ok\n"
+    )
+    first_payload = _zip_with_files({"chat.txt": chat})
+    service.import_package(business_id, first_payload, import_name="batch-1")
+
+    with SessionLocal() as session:
+        messages = session.execute(select(Message)).scalars().all()
+        assert len(messages) == 2, "Both identical messages should be inserted"
+
+    # Re-import same export
+    service.import_package(business_id, first_payload, import_name="batch-2")
+
+    with SessionLocal() as session:
+        messages = session.execute(select(Message)).scalars().all()
+        assert len(messages) == 2, "No duplicate rows should be inserted on re-import"
+
+
+def test_legacy_message_recovery_preserves_compatibility():
+    engine = _make_engine()
+    business_id = _create_business(engine, "Legacy Bakery", "legacy-bakery")
+    service = IngestionService(engine)
+
+    # Simulate legacy DB state: one legacy message (seq=0 was imported, seq=1 was lost)
+    with SessionLocal() as session:
+        conv = Conversation(business_id=business_id, conversation_ref="chat")
+        session.add(conv)
+        session.flush()
+        
+        identity = WhatsAppIdentity(business_id=business_id, whatsapp_number="Customer", normalized_number="conv:chat:customer")
+        session.add(identity)
+        session.flush()
+
+        participant = Participant(business_id=business_id, conversation_id=conv.id, whatsapp_identity_id=identity.id, display_name="Customer")
+        session.add(participant)
+        session.flush()
+
+        from datetime import datetime, timezone
+        
+        batch = ImportBatch(business_id=business_id, import_name="legacy", source_file_name="legacy", status="completed")
+        session.add(batch)
+        session.flush()
+
+        # Manually create legacy fingerprint
+        legacy_fp = service._make_legacy_fingerprint(
+            conv.id, datetime(2024, 1, 2, 10, 32, tzinfo=timezone.utc), "2024-01-02, 10:32", "Customer", "ok", "text"
+        )
+        msg = Message(
+            conversation_id=conv.id,
+            participant_id=participant.id,
+            import_batch_id=batch.id,
+            sent_at=datetime(2024, 1, 2, 10, 32, tzinfo=timezone.utc),
+            source_timestamp="2024-01-02, 10:32",
+            content="ok",
+            message_type="text",
+            message_fingerprint=legacy_fp
+        )
+        session.add(msg)
+        session.commit()
+
+    # Now import an export containing TWO "ok" messages.
+    chat = (
+        "2024-01-02, 10:32 - Customer: ok\n"
+        "2024-01-02, 10:32 - Customer: ok\n"
+    )
+    payload = _zip_with_files({"chat.txt": chat})
+    service.import_package(business_id, payload, import_name="batch-2")
+
+    with SessionLocal() as session:
+        messages = session.execute(select(Message).order_by(Message.id)).scalars().all()
+        assert len(messages) == 2, "Second message should be recovered, first should be skipped"
+

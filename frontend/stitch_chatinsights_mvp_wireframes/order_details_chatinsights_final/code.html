@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Order Details</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Config -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "on-tertiary-fixed": "#2f1500",
+                            "secondary-container": "#dce0e4",
+                            "primary": "#00685f",
+                            "secondary": "#5a5f62",
+                            "background": "#f9f9ff",
+                            "primary-container": "#008378",
+                            "on-surface-variant": "#3d4947",
+                            "tertiary-fixed-dim": "#ffb77d",
+                            "surface-container": "#e7eeff",
+                            "on-error-container": "#93000a",
+                            "surface-bright": "#f9f9ff",
+                            "surface-container-high": "#dee8ff",
+                            "on-background": "#111c2d",
+                            "surface-tint": "#006a61",
+                            "tertiary": "#8d4b00",
+                            "on-primary-fixed": "#00201d",
+                            "surface-variant": "#d8e3fb",
+                            "error-container": "#ffdad6",
+                            "on-primary-fixed-variant": "#005049",
+                            "inverse-primary": "#6bd8cb",
+                            "secondary-fixed-dim": "#c3c7cb",
+                            "on-surface": "#111c2d",
+                            "primary-fixed": "#89f5e7",
+                            "surface-container-low": "#f0f3ff",
+                            "tertiary-container": "#b15f00",
+                            "surface-container-lowest": "#ffffff",
+                            "on-error": "#ffffff",
+                            "on-primary-container": "#f4fffc",
+                            "surface-container-highest": "#d8e3fb",
+                            "on-secondary-fixed-variant": "#43474b",
+                            "tertiary-fixed": "#ffdcc3",
+                            "on-secondary-container": "#5e6367",
+                            "on-primary": "#ffffff",
+                            "on-tertiary": "#ffffff",
+                            "on-tertiary-container": "#fffbff",
+                            "error": "#ba1a1a",
+                            "primary-fixed-dim": "#6bd8cb",
+                            "inverse-on-surface": "#ecf1ff",
+                            "on-secondary-fixed": "#171c1f",
+                            "secondary-fixed": "#dfe3e7",
+                            "surface-dim": "#cfdaf2",
+                            "on-tertiary-fixed-variant": "#6e3900",
+                            "outline-variant": "#bcc9c6",
+                            "inverse-surface": "#263143",
+                            "outline": "#6d7a77",
+                            "surface": "#f9f9ff",
+                            "on-secondary": "#ffffff"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {
+                            "stack-gap-sm": "0.5rem",
+                            "container-padding": "1rem",
+                            "card-padding": "1.25rem",
+                            "stack-gap-lg": "1.5rem",
+                            "stack-gap-md": "1rem"
+                    },
+                    "fontFamily": {
+                            "label-caps": [
+                                    "Inter"
+                            ],
+                            "metadata": [
+                                    "Inter"
+                            ],
+                            "metric-lg-mobile": [
+                                    "Inter"
+                            ],
+                            "headline-md": [
+                                    "Inter"
+                            ],
+                            "metric-lg": [
+                                    "Inter"
+                            ],
+                            "body-md": [
+                                    "Inter"
+                            ]
+                    },
+                    "fontSize": {
+                            "label-caps": [
+                                    "12px",
+                                    {
+                                            "lineHeight": "16px",
+                                            "letterSpacing": "0.05em",
+                                            "fontWeight": "600"
+                                    }
+                            ],
+                            "metadata": [
+                                    "13px",
+                                    {
+                                            "lineHeight": "18px",
+                                            "fontWeight": "400"
+                                    }
+                            ],
+                            "metric-lg-mobile": [
+                                    "28px",
+                                    {
+                                            "lineHeight": "34px",
+                                            "letterSpacing": "-0.01em",
+                                            "fontWeight": "700"
+                                    }
+                            ],
+                            "headline-md": [
+                                    "20px",
+                                    {
+                                            "lineHeight": "28px",
+                                            "fontWeight": "600"
+                                    }
+                            ],
+                            "metric-lg": [
+                                    "32px",
+                                    {
+                                            "lineHeight": "40px",
+                                            "letterSpacing": "-0.02em",
+                                            "fontWeight": "700"
+                                    }
+                            ],
+                            "body-md": [
+                                    "16px",
+                                    {
+                                            "lineHeight": "24px",
+                                            "fontWeight": "400"
+                                    }
+                            ]
+                    }
+            },
+                },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom scrollbar for web view */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #dce0e4;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #bcc9c6;
+        }
+        
+        /* Subtle Depth for AI Bubbles */
+        .ai-bubble-shadow {
+            box-shadow: 0px 2px 4px rgba(30, 41, 59, 0.05);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col font-body-md antialiased md:flex-row pb-[env(safe-area-inset-bottom)] md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-surface fixed top-0 w-full z-50 border-b border-outline-variant flat no shadows flex justify-between items-center px-container-padding h-16 w-full md:hidden">
+<button class="text-primary hover:bg-secondary-container transition-colors p-2 rounded-full active:opacity-80 transition-opacity">
+<span class="material-symbols-outlined">analytics</span>
+</button>
+<span class="font-headline-md text-headline-md font-bold text-primary">ChatInsights</span>
+<button class="text-primary hover:bg-secondary-container transition-colors p-1 rounded-full active:opacity-80 transition-opacity">
+<img class="w-8 h-8 rounded-full object-cover border border-outline-variant" data-alt="A small, circular avatar portrait of a modern business owner with a confident smile, warm lighting, professional setting, minimalist light mode UI aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDNwSt3d4W9Ing931II9t36dt9_8W2Jz51dfuFbzmK8xDt_6OR1n_3j3xxAe3QjKMirKAhNt4gQEcGNIJgtIweXD7exH5hzLJMeialhRsv_kpKk5KnMtpr5tlXMHW5OeNFAvyPXJttuTNu7vT-ZtNgOTSo18K9RwtX08rTDOt5d2u8j3d13EAPZb34vZQ-SIn_Hw9PaoUTZbXQOP5mUt0aiRDEEpDiizAXH2gWEBZWMZ7NTieinxYo"/>
+</button>
+</header>
+<!-- SideNav (Desktop) - Hidden on Mobile -->
+<nav class="hidden md:flex flex-col w-64 bg-surface-container-lowest border-r border-outline-variant fixed h-full z-40">
+<div class="h-16 flex items-center px-6 border-b border-outline-variant shrink-0">
+<span class="material-symbols-outlined text-primary mr-3 filled">analytics</span>
+<span class="font-headline-md text-headline-md font-bold text-primary">ChatInsights</span>
+</div>
+<div class="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-secondary-container transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-container transition-colors">dashboard</span>
+<span class="font-label-caps text-label-caps uppercase">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-secondary-container transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-container transition-colors">upload_file</span>
+<span class="font-label-caps text-label-caps uppercase">Imports</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg bg-primary-container text-on-primary-container flex-col !flex-row group" href="#">
+<span class="material-symbols-outlined">shopping_bag</span>
+<span class="font-label-caps text-label-caps uppercase">Orders</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-secondary-container transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-container transition-colors">forum</span>
+<span class="font-label-caps text-label-caps uppercase">Inquiries</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary hover:bg-secondary-container transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary-container transition-colors">smart_toy</span>
+<span class="font-label-caps text-label-caps uppercase">Assistant</span>
+</a>
+</div>
+<div class="p-4 border-t border-outline-variant">
+<button class="flex items-center gap-3 px-4 py-2 w-full rounded-lg text-secondary hover:bg-secondary-container transition-colors">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="A small, circular avatar portrait of a modern business owner with a confident smile, warm lighting, professional setting, minimalist light mode UI aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9x4x5SGsLOPeNqJDz5tR1d_srkIl6VUHl4BTqK0Se37JLfaQuq-oM49SXZygXv7jlM8yC888Gy2P9OAKVwaJz1CabittZF8DO_cHfaU4b5sTaKhPDxl0QbVizGY6IJtE4WmnnxJzj8lqnFHb3b4t3mINeRPGo8ngvwSxDQTNnahujmw75B0-0IDiNVDeWMVadT25AQjNaaBAiLT4l51cykUBAGRPMobZAJklDQInaqdSEx6_wGvA"/>
+<div class="flex flex-col text-left">
+<span class="font-label-caps text-label-caps text-on-surface">User Profile</span>
+<span class="font-metadata text-metadata text-secondary truncate">owner@business.com</span>
+</div>
+</button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 w-full pt-20 pb-24 md:pt-8 md:pb-8 md:ml-64 px-container-padding max-w-5xl mx-auto flex flex-col gap-stack-lg">
+<!-- Header / Back Action -->
+<div class="flex items-center gap-4">
+<button class="text-secondary hover:text-primary transition-colors flex items-center justify-center p-2 rounded-full hover:bg-surface-variant active:scale-95">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-headline-md text-headline-md-mobile md:text-headline-md text-on-surface font-bold">Order Details</h1>
+</div>
+<!-- Bento Grid Layout for Order Info & Evidence -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-stack-lg">
+<!-- Section 1: Extracted Info Card (Takes up less width on desktop) -->
+<div class="lg:col-span-5 flex flex-col gap-stack-sm">
+<h2 class="font-label-caps text-label-caps text-secondary uppercase tracking-widest pl-1">ChatInsights Identified</h2>
+<div class="bg-surface-container-lowest border border-[#F1F5F9] rounded-xl p-card-padding flex flex-col gap-stack-md shadow-sm">
+<!-- Status Badge -->
+<div class="flex justify-between items-start">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary-fixed/20 text-on-primary-fixed-variant border border-primary-fixed">
+<span class="material-symbols-outlined text-[14px] filled">check_circle</span>
+<span class="font-label-caps text-label-caps">Confirmed</span>
+</div>
+<span class="font-metadata text-metadata text-secondary">Oct 24, 2023</span>
+</div>
+<!-- Customer & Product -->
+<div class="flex flex-col gap-2 mt-2">
+<div>
+<span class="font-metadata text-metadata text-secondary block mb-0.5">Customer</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">Nimali</span>
+</div>
+<div class="h-px w-full bg-outline-variant/30 my-1"></div>
+<div>
+<span class="font-metadata text-metadata text-secondary block mb-0.5">Product</span>
+<span class="font-body-md text-body-md text-on-surface">1kg Chocolate Cake</span>
+</div>
+</div>
+<!-- Amount -->
+<div class="mt-4 pt-4 border-t border-outline-variant/30">
+<span class="font-metadata text-metadata text-secondary block mb-1">Total Amount</span>
+<div class="flex items-baseline gap-1">
+<span class="font-headline-md text-headline-md text-primary">Rs.</span>
+<span class="font-metric-lg-mobile md:font-metric-lg text-metric-lg-mobile md:text-metric-lg text-on-surface">4,500</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 2: AI Evidence / WhatsApp Messages (Takes up more width on desktop) -->
+<div class="lg:col-span-7 flex flex-col gap-stack-sm">
+<h2 class="font-label-caps text-label-caps text-secondary uppercase tracking-widest pl-1">Supporting WhatsApp Messages</h2>
+<div class="bg-surface-container rounded-xl p-card-padding flex flex-col gap-stack-md h-full relative overflow-hidden">
+<!-- Decorative background element for the evidence container -->
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full pointer-events-none"></div>
+<div class="flex-1 flex flex-col gap-4 z-10">
+<!-- Customer Bubble -->
+<div class="flex flex-col items-start max-w-[85%]">
+<span class="font-metadata text-metadata text-secondary mb-1 ml-2">Nimali</span>
+<div class="bg-surface-container-lowest text-on-surface px-4 py-3 rounded-2xl rounded-tl-sm border-l-2 border-primary ai-bubble-shadow font-body-md text-body-md">Hi, I'd like to order a 1kg chocolate cake for Saturday please.</div>
+</div>
+<!-- Business Bubble -->
+<div class="flex flex-col items-end max-w-[85%] self-end">
+<span class="font-metadata text-metadata text-secondary mb-1 mr-2">Business</span>
+<div class="bg-primary text-on-primary px-4 py-3 rounded-2xl rounded-tr-sm font-body-md text-body-md shadow-sm">Sure! That will be Rs. 4,500. Shall I confirm the order?</div>
+</div>
+<!-- Customer Bubble -->
+<div class="flex flex-col items-start max-w-[85%]">
+<span class="font-metadata text-metadata text-secondary mb-1 ml-2">Nimali</span>
+<div class="bg-surface-container-lowest text-on-surface px-4 py-3 rounded-2xl rounded-tl-sm border-l-2 border-primary ai-bubble-shadow font-body-md text-body-md">Yes, please confirm it.</div>
+</div>
+</div>
+<div class="mt-4 flex flex-col gap-4 z-10 border-t border-outline-variant/30 pt-4">
+<p class="font-metadata text-metadata text-secondary italic flex items-start gap-2">
+<span class="material-symbols-outlined text-[16px] text-primary mt-0.5">info</span>
+                            These messages support the information ChatInsights identified above.
+                        </p>
+<!-- Secondary Action -->
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-surface-container-lowest border-t border-outline-variant fixed bottom-0 w-full z-50 pb-[env(safe-area-inset-bottom)] flat no shadows flex justify-around items-center w-full h-16 px-2 md:hidden">
+<a class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors active:scale-95 transition-transform duration-150 w-16 group" href="#">
+<span class="material-symbols-outlined group-hover:filled">dashboard</span>
+<span class="font-label-caps text-[10px] mt-1">Overview</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors active:scale-95 transition-transform duration-150 w-16 group" href="#">
+<span class="material-symbols-outlined group-hover:filled">upload_file</span>
+<span class="font-label-caps text-[10px] mt-1">Imports</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary font-bold active:scale-95 transition-transform duration-150 w-16" href="#">
+<span class="material-symbols-outlined filled">shopping_bag</span>
+<span class="font-label-caps text-[10px] mt-1">Orders</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors active:scale-95 transition-transform duration-150 w-16 group" href="#">
+<span class="material-symbols-outlined group-hover:filled">forum</span>
+<span class="font-label-caps text-[10px] mt-1">Inquiries</span>
+</a>
+<a class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors active:scale-95 transition-transform duration-150 w-16 group" href="#">
+<span class="material-symbols-outlined group-hover:filled">smart_toy</span>
+<span class="font-label-caps text-[10px] mt-1">Assistant</span>
+</a>
+</nav>
+</body></html>

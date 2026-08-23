@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Business Overview - ChatInsights</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config injected from provided style guidance -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#2f1500",
+                        "secondary-container": "#dce0e4",
+                        "primary": "#00685f",
+                        "secondary": "#5a5f62",
+                        "background": "#f9f9ff",
+                        "primary-container": "#008378",
+                        "on-surface-variant": "#3d4947",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "surface-container": "#e7eeff",
+                        "on-error-container": "#93000a",
+                        "surface-bright": "#f9f9ff",
+                        "surface-container-high": "#dee8ff",
+                        "on-background": "#111c2d",
+                        "surface-tint": "#006a61",
+                        "tertiary": "#8d4b00",
+                        "on-primary-fixed": "#00201d",
+                        "surface-variant": "#d8e3fb",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#005049",
+                        "inverse-primary": "#6bd8cb",
+                        "secondary-fixed-dim": "#c3c7cb",
+                        "on-surface": "#111c2d",
+                        "primary-fixed": "#89f5e7",
+                        "surface-container-low": "#f0f3ff",
+                        "tertiary-container": "#b15f00",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-primary-container": "#f4fffc",
+                        "surface-container-highest": "#d8e3fb",
+                        "on-secondary-fixed-variant": "#43474b",
+                        "tertiary-fixed": "#ffdcc3",
+                        "on-secondary-container": "#5e6367",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#fffbff",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#6bd8cb",
+                        "inverse-on-surface": "#ecf1ff",
+                        "on-secondary-fixed": "#171c1f",
+                        "secondary-fixed": "#dfe3e7",
+                        "surface-dim": "#cfdaf2",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "outline-variant": "#bcc9c6",
+                        "inverse-surface": "#263143",
+                        "outline": "#6d7a77",
+                        "surface": "#f9f9ff",
+                        "on-secondary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "stack-gap-sm": "0.5rem",
+                        "container-padding": "1rem",
+                        "card-padding": "1.25rem",
+                        "stack-gap-lg": "1.5rem",
+                        "stack-gap-md": "1rem"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["Inter", "sans-serif"],
+                        "metadata": ["Inter", "sans-serif"],
+                        "metric-lg-mobile": ["Inter", "sans-serif"],
+                        "headline-md": ["Inter", "sans-serif"],
+                        "metric-lg": ["Inter", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "metadata": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "metric-lg-mobile": ["28px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "metric-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        
+        /* Utility for hiding scrollbars but keeping functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md antialiased pt-16 pb-24 md:pb-8 flex flex-col min-h-screen">
+<!-- TopAppBar -->
+<header class="bg-surface fixed top-0 w-full z-50 border-b border-outline-variant flex justify-between items-center px-container-padding h-16 w-full">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="analytics">analytics</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">ChatInsights</h1>
+</div>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden">
+<img class="object-cover w-full h-full" data-alt="A professional headshot of a small business owner, smiling, against a clean light background, brightly lit, embodying a modern and approachable brand aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCa57RNZz0FPTkdn-RcuS0OYjc9gMDKOV2RzcaleJGMSQZ5ARgT3r6ilCfEjxEPAvVL56OjeaQ2RXPm8Pb2OyivMlyGM_eG64f3iD_xRUtkWoXHrA1N7vWQhxKdlYKncfOv55_NZr3Itqi9n8Hl-zu8ALAQkDLZIa7SsKKp7QFbAf-Bovv0hEo-iy570wLxM_SmvovS9_jQoCYueJ9e9EpdXdIHxYzEXrhFZpszkc0EXQCxidUvn0w"/>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-grow w-full max-w-5xl mx-auto px-container-padding py-stack-gap-lg flex flex-col gap-stack-gap-lg">
+<!-- 1. Hero Metric: Known Revenue -->
+<section class="flex flex-col items-center justify-center py-stack-gap-md text-center">
+<h2 class="font-label-caps text-label-caps text-secondary uppercase mb-2">Known Revenue</h2>
+<div class="font-metric-lg-mobile md:font-metric-lg text-metric-lg-mobile md:text-metric-lg text-primary">Rs. 45,000</div>
+<div class="flex items-center justify-center gap-1 mt-2 text-secondary font-metadata text-metadata max-w-xs text-center"><span class="material-symbols-outlined" style="font-size: 16px;">info</span><span>2 confirmed orders have Amount unavailable.</span></div>
+</section>
+<!-- 2. Grid of Metrics -->
+<section class="grid grid-cols-2 md:grid-cols-4 gap-stack-gap-md">
+<!-- Confirmed Orders -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-card-padding flex flex-col justify-between min-h-[100px]">
+<div class="flex items-center justify-between w-full">
+<span class="font-label-caps text-label-caps text-secondary uppercase truncate">Confirmed Orders</span>
+<span class="material-symbols-outlined text-primary">check_circle</span>
+</div>
+<div class="font-headline-md text-headline-md font-bold mt-2">12</div>
+</div>
+<!-- Pending Orders -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-card-padding flex flex-col justify-between min-h-[100px]">
+<div class="flex items-center justify-between w-full">
+<span class="font-label-caps text-label-caps text-secondary uppercase truncate">Pending Orders</span>
+<span class="material-symbols-outlined text-primary">pending_actions</span>
+</div>
+<div class="font-headline-md text-headline-md font-bold mt-2">4</div>
+</div>
+<!-- Customers -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-card-padding flex flex-col justify-between min-h-[100px]">
+<div class="flex items-center justify-between w-full">
+<span class="font-label-caps text-label-caps text-secondary uppercase truncate">Customers</span>
+<span class="material-symbols-outlined text-primary">group</span>
+</div>
+<div class="font-headline-md text-headline-md font-bold mt-2">45</div>
+</div>
+<!-- Open Inquiries -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-card-padding flex flex-col justify-between min-h-[100px]">
+<div class="flex items-center justify-between w-full">
+<span class="font-label-caps text-label-caps text-secondary uppercase truncate">Open Inquiries</span>
+<span class="material-symbols-outlined text-primary">forum</span>
+</div>
+<div class="font-headline-md text-headline-md font-bold mt-2">8</div>
+</div>
+</section>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-stack-gap-lg w-full">
+<!-- 3. Top Products -->
+<section class="bg-surface-container-lowest border border-outline-variant rounded-xl p-card-padding flex flex-col gap-stack-gap-md">
+<h3 class="font-headline-md text-headline-md text-on-surface">Top Products</h3>
+<ul class="flex flex-col gap-3">
+<li class="flex items-center justify-between py-2 border-b border-surface-variant last:border-0">
+<div class="flex items-center gap-3">
+<span class="font-label-caps text-label-caps text-secondary w-4">1.</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">Chocolate Cake</span>
+</div>
+<span class="font-metadata text-metadata text-secondary">12</span>
+</li>
+<li class="flex items-center justify-between py-2 border-b border-surface-variant last:border-0">
+<div class="flex items-center gap-3">
+<span class="font-label-caps text-label-caps text-secondary w-4">2.</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">Cupcakes</span>
+</div>
+<span class="font-metadata text-metadata text-secondary">8</span>
+</li>
+<li class="flex items-center justify-between py-2 border-b border-surface-variant last:border-0">
+<div class="flex items-center gap-3">
+<span class="font-label-caps text-label-caps text-secondary w-4">3.</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold">Ribbon Cake</span>
+</div>
+<span class="font-metadata text-metadata text-secondary">6</span>
+</li>
+</ul>
+</section>
+<!-- 5. Call to Action Card (Moved here for better desktop balance, falls naturally in flow) -->
+<section class="bg-surface-container-low border border-outline-variant rounded-xl p-card-padding flex flex-col justify-center gap-4 text-center md:text-left relative overflow-hidden">
+<!-- Subtle decorative background element -->
+<div class="absolute -right-8 -top-8 opacity-10 pointer-events-none">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</div>
+<div class="z-10 flex flex-col gap-2">
+<h3 class="font-headline-md text-headline-md text-on-surface">Ask ChatInsights</h3>
+<p class="font-metadata text-metadata text-secondary">Have a question about your business? Ask about your orders, products, customers, revenue or inquiries.</p>
+</div>
+<button class="z-10 mt-2 self-center md:self-start bg-primary text-on-primary rounded-full px-6 py-3 font-label-caps text-label-caps hover:bg-primary-container transition-colors shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">chat_bubble</span>
+                    Ask ChatInsights
+                </button>
+</section>
+</div>
+<!-- 4. Recent Orders -->
+<section class="flex flex-col gap-stack-gap-md w-full">
+<div class="flex items-center justify-between w-full">
+<h3 class="font-headline-md text-headline-md text-on-surface">Recent Orders</h3>
+<button class="font-label-caps text-label-caps text-primary hover:text-primary-container transition-colors">View All</button>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Order Card 1 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-card-padding flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+<div class="flex flex-col gap-1 w-full sm:w-auto">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md font-semibold text-on-surface">Nimali</span>
+<span class="bg-primary-fixed text-on-primary-fixed-variant px-2 py-0.5 rounded-full font-label-caps text-[10px] tracking-wide uppercase">Confirmed</span>
+</div>
+<span class="font-metadata text-metadata text-secondary">Chocolate Cake</span>
+</div>
+<div class="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto mt-2 sm:mt-0">
+<span class="font-body-md text-body-md font-semibold text-primary">Rs. 4,500</span>
+<span class="font-metadata text-metadata text-secondary">Today</span>
+</div>
+</div>
+<!-- Order Card 2 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-card-padding flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+<div class="flex flex-col gap-1 w-full sm:w-auto">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md font-semibold text-on-surface">Kasun</span>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed-variant px-2 py-0.5 rounded-full font-label-caps text-[10px] tracking-wide uppercase">Pending</span>
+</div>
+<span class="font-metadata text-metadata text-secondary">Cupcakes</span>
+</div>
+<div class="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto mt-2 sm:mt-0">
+<span class="font-metadata text-metadata text-secondary italic">Amount unavailable</span>
+<span class="font-metadata text-metadata text-secondary">Yesterday</span>
+</div>
+</div>
+<!-- Order Card 3 -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-card-padding flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+<div class="flex flex-col gap-1 w-full sm:w-auto">
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md font-semibold text-on-surface">Tharushi</span>
+<span class="bg-primary-fixed text-on-primary-fixed-variant px-2 py-0.5 rounded-full font-label-caps text-[10px] tracking-wide uppercase">Confirmed</span>
+</div>
+<span class="font-metadata text-metadata text-secondary">Ribbon Cake</span>
+</div>
+<div class="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto mt-2 sm:mt-0">
+<span class="font-body-md text-body-md font-semibold text-primary">Rs. 12,000</span>
+<span class="font-metadata text-metadata text-secondary">Oct 24</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Visible on Mobile) -->
+<nav class="md:hidden bg-surface-container-lowest fixed bottom-0 w-full z-50 pb-safe border-t border-outline-variant flex justify-around items-center h-16 px-2">
+<!-- Overview (Active) -->
+<button class="flex flex-col items-center justify-center text-primary font-bold active:scale-95 transition-transform duration-150 w-full">
+<span class="material-symbols-outlined" data-icon="dashboard" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-caps text-label-caps mt-1">Overview</span>
+</button>
+<!-- Imports (Inactive) -->
+<button class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors active:scale-95 transition-transform duration-150 w-full">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+<span class="font-label-caps text-label-caps mt-1">Imports</span>
+</button>
+<!-- Orders (Inactive) -->
+<button class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors active:scale-95 transition-transform duration-150 w-full">
+<span class="material-symbols-outlined" data-icon="shopping_bag">shopping_bag</span>
+<span class="font-label-caps text-label-caps mt-1">Orders</span>
+</button>
+<!-- Inquiries (Inactive) -->
+<button class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors active:scale-95 transition-transform duration-150 w-full">
+<span class="material-symbols-outlined" data-icon="forum">forum</span>
+<span class="font-label-caps text-label-caps mt-1">Inquiries</span>
+</button>
+<!-- Assistant (Inactive) -->
+<button class="flex flex-col items-center justify-center text-secondary hover:text-primary-container transition-colors active:scale-95 transition-transform duration-150 w-full">
+<span class="material-symbols-outlined" data-icon="smart_toy">smart_toy</span>
+<span class="font-label-caps text-label-caps mt-1">Assistant</span>
+</button>
+</nav>
+</body></html>

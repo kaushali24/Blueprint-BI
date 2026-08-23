@@ -28,3 +28,9 @@ dist-ssr
 .env
 .next/
 next-env.d.ts
+tsconfig.tsbuildinfo
+
+# Local development artifacts
+dummy_chat.txt
+dummy_export.zip
+_test_*.zip

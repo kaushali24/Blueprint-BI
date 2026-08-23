@@ -5,6 +5,7 @@ from decimal import Decimal
 from typing import Optional
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -50,6 +51,9 @@ class Business(Base):
     orders: Mapped[list["Order"]] = relationship(back_populates="business", cascade="all, delete-orphan")
     feedbacks: Mapped[list["Feedback"]] = relationship(back_populates="business", cascade="all, delete-orphan")
     extracted_facts: Mapped[list["ExtractedFact"]] = relationship(
+        back_populates="business", cascade="all, delete-orphan"
+    )
+    relevance_assessments: Mapped[list["RelevanceAssessment"]] = relationship(
         back_populates="business", cascade="all, delete-orphan"
     )
 
@@ -158,6 +162,9 @@ class Conversation(Base):
     extracted_facts: Mapped[list["ExtractedFact"]] = relationship(
         back_populates="conversation", cascade="all, delete-orphan"
     )
+    relevance_assessments: Mapped[list["RelevanceAssessment"]] = relationship(
+        back_populates="conversation", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         UniqueConstraint("business_id", "conversation_ref", name="uq_business_conversation_ref"),
@@ -214,6 +221,9 @@ class Message(Base):
     participant: Mapped[Optional[Participant]] = relationship(back_populates="messages")
     media: Mapped[list["Media"]] = relationship(back_populates="message", cascade="all, delete-orphan")
     evidence_links: Mapped[list["ExtractionEvidence"]] = relationship(
+        back_populates="message", cascade="all, delete-orphan"
+    )
+    relevance_assessments: Mapped[list["RelevanceAssessment"]] = relationship(
         back_populates="message", cascade="all, delete-orphan"
     )
 
@@ -298,8 +308,8 @@ class OrderItem(Base):
     order_id: Mapped[int] = mapped_column(ForeignKey("order.id"), nullable=False, index=True)
     product_name: Mapped[str] = mapped_column(String(255), nullable=False)
     quantity: Mapped[Decimal] = mapped_column(Numeric(12, 3), nullable=False)
-    unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
-    line_total: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    unit_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
+    line_total: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 2), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     order: Mapped[Order] = relationship(back_populates="order_items")
@@ -401,6 +411,185 @@ class ExtractionEvidence(Base):
     )
 
 
+class ExtractionTarget(Base):
+    """Ledger for tracking AI extraction per message and business to ensure idempotency."""
+    
+    __tablename__ = "extraction_target"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    message_id: Mapped[int] = mapped_column(ForeignKey("message.id"), nullable=False, index=True)
+    business_id: Mapped[int] = mapped_column(ForeignKey("business.id"), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
+    attempted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    failure_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("message_id", "business_id", name="uq_extraction_target_message_business"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Relevance Assessment (Tasks 1.1 – 1.8)
+# ---------------------------------------------------------------------------
+
+# Canonical relevance states defined by the spec.
+# `pending`      – assessment not yet completed
+# `relevant`     – approved for downstream extraction
+# `not_relevant` – considered unrelated to business activity
+# `needs_review` – uncertain; requires human review before extraction
+RELEVANCE_STATES = ("pending", "relevant", "not_relevant", "needs_review")
+
+
+class RelevanceAssessment(Base):
+    """Derived relevance decision for an individual imported WhatsApp message.
+
+    Stored separately from the raw :class:`Message` record so that the
+    source evidence is never modified by this derived layer (Task 1.8).
+    Each row represents the *current* assessment for a given message within
+    a business context.  Previous versions are preserved in
+    :class:`RelevanceAssessmentHistory` (Task 1.6).
+    """
+
+    __tablename__ = "relevance_assessment"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+
+    # --- Source-message and ownership references (Tasks 1.3, 1.4, 3.1–3.2) ---
+    message_id: Mapped[int] = mapped_column(
+        ForeignKey("message.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    conversation_id: Mapped[int] = mapped_column(
+        ForeignKey("conversation.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    business_id: Mapped[int] = mapped_column(
+        ForeignKey("business.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # --- Canonical relevance state (Tasks 1.2, 2.2–2.5) ---
+    # Constrained to the four canonical states.
+    relevance_state: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="pending", index=True
+    )
+
+    # --- Provenance and method metadata (Tasks 1.5, 3.3, 3.4) ---
+    assessed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    assessment_method: Mapped[Optional[str]] = mapped_column(
+        String(120), nullable=True
+    )  # e.g. "rule-based-v1", "llm-gemini-flash-2.5"
+    assessment_version: Mapped[Optional[str]] = mapped_column(
+        String(60), nullable=True
+    )
+    rationale: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )  # Human-readable decision explanation
+
+    # --- Contextual evidence metadata (Task 3.5) ---
+    # JSON list of message IDs used as context during assessment.
+    context_message_ids_json: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )
+
+    # --- Versioning / history tracking (Task 1.6) ---
+    assessment_version_number: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1
+    )  # Incremented on each reassessment
+    is_current: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True
+    )  # Only the most recent row is current
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+    # --- Relationships ---
+    message: Mapped["Message"] = relationship(back_populates="relevance_assessments")
+    conversation: Mapped["Conversation"] = relationship(
+        back_populates="relevance_assessments"
+    )
+    business: Mapped["Business"] = relationship(
+        back_populates="relevance_assessments"
+    )
+    history: Mapped[list["RelevanceAssessmentHistory"]] = relationship(
+        back_populates="current_assessment", cascade="all, delete-orphan"
+    )
+
+    # --- Constraints and indexes (Tasks 1.7) ---
+    __table_args__ = (
+        # Only one *current* assessment per message per business at a time.
+        UniqueConstraint(
+            "message_id",
+            "business_id",
+            "is_current",
+            name="uq_relevance_current_per_message_business",
+        ),
+        # Validate canonical state values.
+        CheckConstraint(
+            "relevance_state IN ('pending', 'relevant', 'not_relevant', 'needs_review')",
+            name="ck_relevance_state_valid",
+        ),
+        # Query patterns: filter by business + state, or business + message.
+        Index("ix_relevance_business_state", "business_id", "relevance_state"),
+        Index("ix_relevance_message_business", "message_id", "business_id"),
+        Index("ix_relevance_conversation_business", "conversation_id", "business_id"),
+    )
+
+
+class RelevanceAssessmentHistory(Base):
+    """Historical snapshot of a superseded :class:`RelevanceAssessment`.
+
+    When a message is reassessed the previous assessment row is copied here
+    before being updated, preserving the full audit trail (Task 1.6, 3.3).
+    """
+
+    __tablename__ = "relevance_assessment_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+
+    # Foreign key to the live assessment that was superseded.
+    relevance_assessment_id: Mapped[int] = mapped_column(
+        ForeignKey("relevance_assessment.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    message_id: Mapped[int] = mapped_column(
+        ForeignKey("message.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    business_id: Mapped[int] = mapped_column(
+        ForeignKey("business.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+
+    # Snapshot of the state at the time of supersession.
+    relevance_state: Mapped[str] = mapped_column(String(50), nullable=False)
+    assessed_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    assessment_method: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
+    assessment_version: Mapped[Optional[str]] = mapped_column(String(60), nullable=True)
+    rationale: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    context_message_ids_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    superseded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False
+    )
+
+    current_assessment: Mapped["RelevanceAssessment"] = relationship(
+        back_populates="history"
+    )
+
+    __table_args__ = (
+        Index("ix_ra_history_assessment", "relevance_assessment_id"),
+        Index("ix_ra_history_message_business", "message_id", "business_id"),
+    )
+
+
 __all__ = [
     "Business",
     "Customer",
@@ -416,5 +605,9 @@ __all__ = [
     "Feedback",
     "ExtractedFact",
     "ExtractionEvidence",
+    "ExtractionTarget",
+    "RelevanceAssessment",
+    "RelevanceAssessmentHistory",
+    "RELEVANCE_STATES",
     "Base",
 ]
