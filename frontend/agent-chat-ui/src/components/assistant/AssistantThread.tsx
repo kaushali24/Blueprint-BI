@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import PageHeader from "@/components/layout/PageHeader";
 import AssistantMessage, {
   AssistantErrorMessage,
   AssistantTypingIndicator,
@@ -50,13 +49,17 @@ function WelcomeCard() {
   );
 }
 
-export default function AssistantThread() {
+export interface AssistantThreadProps {
+  messages: ChatMessage[];
+  onAddMessage: (message: ChatMessage, explicitSessionId?: string) => string | void;
+}
+
+export default function AssistantThread({ messages, onAddMessage }: AssistantThreadProps) {
   const businessId = useBusinessId();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [showError, setShowError] = useState(false);
-  const [retryMessage, setRetryMessage] = useState<string | null>(null);
+  const [retryState, setRetryState] = useState<{ text: string; sessionId?: string } | null>(null);
 
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
   const isSendingRef = useRef(false);
@@ -70,7 +73,7 @@ export default function AssistantThread() {
   }, [messages, isSending, showError, scrollToBottom]);
 
   const sendMessage = useCallback(
-    async (text: string, options?: { isRetry?: boolean }) => {
+    async (text: string, options?: { isRetry?: boolean; retrySessionId?: string }) => {
       const trimmed = text.trim();
       if (!trimmed || isSendingRef.current) return;
 
@@ -78,17 +81,22 @@ export default function AssistantThread() {
       setIsSending(true);
       setShowError(false);
 
+      let sessionId: string | undefined = options?.retrySessionId;
+
       if (!options?.isRetry) {
         const userMessage: ChatMessage = {
           id: uuidv4(),
           role: "user",
           content: trimmed,
         };
-        setMessages((prev) => [...prev, userMessage]);
+        const returnedId = onAddMessage(userMessage);
+        if (typeof returnedId === "string") {
+          sessionId = returnedId;
+        }
         setInput("");
       }
 
-      setRetryMessage(trimmed);
+      setRetryState({ text: trimmed, sessionId });
 
       try {
         const result = await apiClient.chat(businessId, trimmed);
@@ -97,8 +105,8 @@ export default function AssistantThread() {
           role: "assistant",
           content: result.response,
         };
-        setMessages((prev) => [...prev, assistantMessage]);
-        setRetryMessage(null);
+        onAddMessage(assistantMessage, sessionId);
+        setRetryState(null);
       } catch {
         setShowError(true);
       } finally {
@@ -106,7 +114,7 @@ export default function AssistantThread() {
         setIsSending(false);
       }
     },
-    [businessId],
+    [businessId, onAddMessage],
   );
 
   const handleSend = useCallback(() => {
@@ -114,22 +122,18 @@ export default function AssistantThread() {
   }, [input, sendMessage]);
 
   const handleRetry = useCallback(() => {
-    if (retryMessage) {
-      sendMessage(retryMessage, { isRetry: true });
+    if (retryState) {
+      sendMessage(retryState.text, { isRetry: true, retrySessionId: retryState.sessionId });
     }
-  }, [retryMessage, sendMessage]);
+  }, [retryState, sendMessage]);
 
   const showWelcome = messages.length === 0;
   const showStarters = messages.length === 0;
 
   return (
-    <div className="flex flex-col min-h-[calc(100dvh-7rem)] md:min-h-[calc(100dvh-5rem)] w-full max-w-3xl mx-auto">
-      <div className="shrink-0 pb-2">
-        <PageHeader title="Ask ChatInsights" />
-      </div>
-
+    <div className="flex flex-col h-full w-full max-w-3xl mx-auto px-4 md:px-0">
       <div
-        className="flex-1 overflow-y-auto pb-4 space-y-stack-md min-h-0"
+        className="flex-1 overflow-y-auto space-y-stack-md min-h-0"
         role="log"
         aria-label="Chat conversation"
         aria-live="polite"
@@ -149,13 +153,14 @@ export default function AssistantThread() {
         {isSending && <AssistantTypingIndicator />}
 
         {showError && !isSending && (
-          <AssistantErrorMessage onRetry={retryMessage ? handleRetry : undefined} />
+          <AssistantErrorMessage onRetry={retryState ? handleRetry : undefined} />
         )}
 
         {showStarters && (
           <StarterQuestions onSelect={sendMessage} disabled={isSending} />
         )}
 
+        <div className="h-32 md:h-28 shrink-0" aria-hidden="true" />
         <div ref={scrollAnchorRef} aria-hidden="true" className="h-1" />
       </div>
 

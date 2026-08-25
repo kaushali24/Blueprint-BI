@@ -6,6 +6,7 @@ import {
   InquirySummaryDTO,
   ImportResultDTO,
   ChatResponseDTO,
+  ImportBatchDTO,
 } from "./types";
 
 export class ApiError extends Error {
@@ -59,8 +60,8 @@ export const apiClient = {
   getAnalytics: (businessId: number): Promise<BusinessAnalyticsReportDTO> =>
     fetchWithHandling(`${API_URL}/api/v1/businesses/${businessId}/analytics`),
 
-  getOrders: (businessId: number): Promise<OrderSummaryDTO[]> =>
-    fetchWithHandling(`${API_URL}/api/v1/businesses/${businessId}/orders`),
+  getOrders: (businessId: number, status?: string): Promise<OrderSummaryDTO[]> =>
+    fetchWithHandling(`${API_URL}/api/v1/businesses/${businessId}/orders${status ? `?status=${status}` : ''}`),
 
   getOrder: (businessId: number, orderId: number): Promise<OrderDetailDTO> =>
     fetchWithHandling(`${API_URL}/api/v1/businesses/${businessId}/orders/${orderId}`),
@@ -68,8 +69,11 @@ export const apiClient = {
   getOrderEvidence: (businessId: number, orderId: number): Promise<EvidenceMessageDTO[]> =>
     fetchWithHandling(`${API_URL}/api/v1/businesses/${businessId}/orders/${orderId}/evidence`),
 
-  getInquiries: (businessId: number): Promise<InquirySummaryDTO[]> =>
-    fetchWithHandling(`${API_URL}/api/v1/businesses/${businessId}/inquiries`),
+  getInquiries: (businessId: number, status?: string): Promise<InquirySummaryDTO[]> =>
+    fetchWithHandling(`${API_URL}/api/v1/businesses/${businessId}/inquiries${status ? `?status=${status}` : ''}`),
+
+  getRecentImports: (businessId: number): Promise<ImportBatchDTO[]> =>
+    fetchWithHandling(`${API_URL}/api/v1/businesses/${businessId}/imports`),
 
   uploadImport: (businessId: number, file: File): Promise<ImportResultDTO> => {
     const formData = new FormData();

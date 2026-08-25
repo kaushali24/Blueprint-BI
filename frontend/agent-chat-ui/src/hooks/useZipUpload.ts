@@ -43,6 +43,12 @@ function translateResultErrors(errors: string[] | undefined): string[] {
     return ["The database is busy. Please wait a moment and try again."];
   }
 
+  if (combined.includes("without persisting any messages")) {
+    return [
+      "This file has already been imported. 0 new messages were found.",
+    ];
+  }
+
   if (combined.includes("zip") || combined.includes("archive")) {
     return [
       "We couldn't process this WhatsApp export. Please check the file and try again.",

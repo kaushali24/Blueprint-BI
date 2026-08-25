@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import PageHeader from "@/components/layout/PageHeader";
+import { apiClient } from "@/lib/api/client";
+import { ImportBatchDTO } from "@/lib/api/types";
 import { useBusinessId } from "@/providers/BusinessProvider";
 import { useZipUpload } from "@/hooks/useZipUpload";
 import { Icons } from "@/lib/icons";
 import FileUploadCard from "@/components/imports/FileUploadCard";
 import ImportProgress from "@/components/imports/ImportProgress";
 import ImportResultCard from "@/components/imports/ImportResultCard";
+import RecentImports from "@/components/imports/RecentImports";
 
 const QUICK_STEPS = [
   "Open the customer chat in WhatsApp",
@@ -20,6 +23,25 @@ export default function ImportsPage() {
   const businessId = useBusinessId();
   const { state, selectFile, clearFile, uploadFile, isUploading } = useZipUpload(businessId);
   const [showExportHelp, setShowExportHelp] = useState(false);
+  const [recentImports, setRecentImports] = useState<ImportBatchDTO[] | null>(null);
+  const [loadingImports, setLoadingImports] = useState(true);
+
+  const loadImports = useCallback(async () => {
+    setLoadingImports(true);
+    try {
+      const data = await apiClient.getRecentImports(businessId);
+      setRecentImports(data);
+    } catch {
+      setRecentImports(null);
+    } finally {
+      setLoadingImports(false);
+    }
+  }, [businessId]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadImports();
+  }, [loadImports, state.stage]);
 
   const showInstructions =
     state.stage === "idle" || state.stage === "file_selected";
@@ -34,7 +56,7 @@ export default function ImportsPage() {
       <PageHeader title="Import WhatsApp Conversations" />
 
       <p className="font-metadata text-metadata text-ci-on-surface-variant max-w-lg -mt-2">
-        Export your customer chat from WhatsApp and upload the ZIP file here.
+        Export your WhatsApp chat and upload the ZIP file here. Images and voice messages can be included, but advanced media interpretation isn't available in this MVP.
       </p>
 
       {showInstructions && (
@@ -108,6 +130,10 @@ export default function ImportsPage() {
           state.stage === "warning" ||
           state.stage === "error") && (
           <ImportResultCard state={state} onReset={clearFile} />
+        )}
+
+        {showInstructions && (
+          <RecentImports imports={recentImports} loading={loadingImports} />
         )}
       </section>
     </div>

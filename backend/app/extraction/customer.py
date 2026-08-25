@@ -12,6 +12,7 @@ def resolve_customer(session: Session, target_message: Message) -> int | None:
         .join(WhatsAppIdentity, WhatsAppIdentity.customer_id == Customer.id)
         .join(Participant, Participant.whatsapp_identity_id == WhatsAppIdentity.id)
         .where(Participant.conversation_id == target_message.conversation_id)
+        .limit(1)
     )
     existing_customer_id = session.execute(stmt).scalar_one_or_none()
     

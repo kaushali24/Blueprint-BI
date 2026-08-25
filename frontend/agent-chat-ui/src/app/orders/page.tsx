@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import PageHeader from "@/components/layout/PageHeader";
 import OrderCard, { OrderCardSkeleton } from "@/components/orders/OrderCard";
 import EmptyState from "@/components/shared/EmptyState";
@@ -9,8 +10,11 @@ import { useBusinessId } from "@/providers/BusinessProvider";
 import { apiClient } from "@/lib/api/client";
 import { OrderSummaryDTO } from "@/lib/api/types";
 
-export default function OrdersPage() {
+function OrdersContent() {
   const businessId = useBusinessId();
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status") || undefined;
+
   const [orders, setOrders] = useState<OrderSummaryDTO[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -19,7 +23,7 @@ export default function OrdersPage() {
     setLoading(true);
     setError(false);
     try {
-      const data = await apiClient.getOrders(businessId);
+      const data = await apiClient.getOrders(businessId, statusParam);
       setOrders(data);
     } catch {
       setError(true);
@@ -27,19 +31,15 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [businessId]);
+  }, [businessId, statusParam]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadOrders();
   }, [loadOrders]);
 
   return (
-    <div className="flex flex-col gap-stack-lg w-full">
-      <PageHeader title="Orders" />
-      <p className="font-metadata text-metadata text-ci-secondary -mt-2">
-        View your recent orders.
-      </p>
-
+    <>
       {loading ? (
         <section
           className="grid grid-cols-1 md:grid-cols-2 gap-stack-md w-full"
@@ -65,6 +65,31 @@ export default function OrdersPage() {
           ))}
         </section>
       )}
+    </>
+  );
+}
+
+export default function OrdersPage() {
+  return (
+    <div className="flex flex-col gap-stack-lg w-full">
+      <PageHeader title="Orders" />
+      <p className="font-metadata text-metadata text-ci-secondary -mt-2">
+        View your recent orders.
+      </p>
+
+      <Suspense fallback={
+        <section
+          className="grid grid-cols-1 md:grid-cols-2 gap-stack-md w-full"
+          aria-busy="true"
+          aria-label="Loading orders"
+        >
+          {Array.from({ length: 3 }).map((_, i) => (
+            <OrderCardSkeleton key={i} />
+          ))}
+        </section>
+      }>
+        <OrdersContent />
+      </Suspense>
     </div>
   );
 }

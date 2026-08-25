@@ -70,6 +70,7 @@ export default function OrderDetailsPage() {
   }, [businessId, orderId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadOrderDetails();
   }, [loadOrderDetails]);
 

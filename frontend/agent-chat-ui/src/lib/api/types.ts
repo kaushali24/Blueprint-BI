@@ -6,6 +6,7 @@ export interface RecentOrderDTO {
   created_at: string;
   customer_name: string | null;
   first_product_name: string | null;
+  item_count?: number;
 }
 
 export interface ProductMetricItemDTO {
@@ -59,6 +60,7 @@ export interface OrderSummaryDTO {
   created_at: string;
   customer_name: string | null;
   first_product_name: string | null;
+  item_count?: number;
 }
 
 export interface OrderItemDTO {
@@ -105,4 +107,12 @@ export interface ImportResultDTO {
 
 export interface ChatResponseDTO {
   response: string;
+}
+
+export interface ImportBatchDTO {
+  id: number;
+  import_name: string;
+  source_file_name: string | null;
+  status: string;
+  created_at: string;
 }

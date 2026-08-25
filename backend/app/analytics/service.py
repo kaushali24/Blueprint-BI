@@ -24,7 +24,7 @@ class AnalyticsService:
         status_counts_query = select(Order.status, func.count(Order.id)).where(
             Order.business_id == business_id
         ).group_by(Order.status)
-        
+
         status_counts = {row[0]: row[1] for row in session.execute(status_counts_query).all()}
         total_count = sum(status_counts.values())
 
@@ -37,7 +37,7 @@ class AnalyticsService:
             Order.status == 'confirmed'
         )
         revenue_result = session.execute(revenue_query).first()
-        
+
         known_total_revenue = revenue_result.known_total_revenue if revenue_result and revenue_result.known_total_revenue is not None else Decimal("0")
         orders_with_unknown_revenue_count = revenue_result.unknown_count if revenue_result and revenue_result.unknown_count is not None else 0
 
@@ -53,17 +53,17 @@ class AnalyticsService:
             Order.created_at.desc(),
             Order.id.desc()
         ).limit(5)
-        
+
         recent_orders = []
         for order in session.scalars(recent_orders_query).unique():
             customer_name = order.customer.name if order.customer else None
             first_item = order.order_items[0] if order.order_items else None
             first_product_name = first_item.product_name if first_item else None
-            
+
             order_date = order.created_at
             if order.extraction_target and order.extraction_target.end_message and order.extraction_target.end_message.sent_at:
                 order_date = order.extraction_target.end_message.sent_at
-                
+
             recent_orders.append(
                 RecentOrderDTO(
                     id=order.id,
@@ -72,7 +72,8 @@ class AnalyticsService:
                     total_amount=order.total_amount,
                     created_at=order_date.isoformat(),
                     customer_name=customer_name,
-                    first_product_name=first_product_name
+                    first_product_name=first_product_name,
+                    item_count=len(order.order_items)
                 )
             )
 
@@ -100,7 +101,7 @@ class AnalyticsService:
             func.count(OrderItem.id).desc(),
             OrderItem.product_name.asc()
         ).limit(10)
-        
+
         top_products = []
         for row in session.execute(query).all():
             top_products.append(
@@ -110,7 +111,7 @@ class AnalyticsService:
                     line_count=row.line_count
                 )
             )
-            
+
         return ProductMetricsDTO(top_products=top_products)
 
     @staticmethod
@@ -118,17 +119,27 @@ class AnalyticsService:
         status_counts_query = select(Inquiry.status, func.count(Inquiry.id)).where(
             Inquiry.business_id == business_id
         ).group_by(Inquiry.status)
-        
-        status_counts = {row[0]: row[1] for row in session.execute(status_counts_query).all()}
-        total_count = sum(status_counts.values())
-        
+
+        raw_counts = session.execute(status_counts_query).all()
+        status_counts = {}
+        total_count = 0
+        for raw_status, count in raw_counts:
+            # Map canonical unresolved statuses to 'open' for frontend analytics
+            if raw_status in ('resolved', 'closed'):
+                mapped_status = raw_status
+            else:
+                mapped_status = 'open'
+
+            status_counts[mapped_status] = status_counts.get(mapped_status, 0) + count
+            total_count += count
+
         recent_inquiries_query = select(Inquiry).where(
             Inquiry.business_id == business_id
         ).order_by(
             Inquiry.created_at.desc(),
             Inquiry.id.desc()
         ).limit(5)
-        
+
         recent_inquiries = []
         for inquiry in session.scalars(recent_inquiries_query):
             recent_inquiries.append(
@@ -140,7 +151,7 @@ class AnalyticsService:
                     created_at=inquiry.created_at.isoformat()
                 )
             )
-            
+
         return InquiryMetricsDTO(
             total_count=total_count,
             status_counts=status_counts,
@@ -152,7 +163,7 @@ class AnalyticsService:
         total_known_customers = session.scalar(
             select(func.count(Customer.id)).where(Customer.business_id == business_id)
         ) or 0
-        
+
         # Repeat customer logic: > 1 confirmed order for the same non-null customer_id
         subquery = select(
             Order.customer_id,
@@ -164,11 +175,11 @@ class AnalyticsService:
         ).group_by(Order.customer_id).having(
             func.count(Order.id) > 1
         ).subquery()
-        
+
         repeat_customer_count = session.scalar(
             select(func.count()).select_from(subquery)
         ) or 0
-        
+
         return CustomerMetricsDTO(
             total_known_customers=total_known_customers,
             repeat_customer_count=repeat_customer_count
@@ -176,16 +187,41 @@ class AnalyticsService:
 
     @staticmethod
     def get_feedback_metrics(session: Session, business_id: int) -> FeedbackMetricsDTO:
+        from app.database.models import Feedback, Customer, Order
+        from app.analytics.schemas import RecentFeedbackDTO
+
         sentiment_counts_query = select(Feedback.sentiment, func.count(Feedback.id)).where(
             Feedback.business_id == business_id
         ).group_by(Feedback.sentiment)
-        
+
         sentiment_counts = {row[0]: row[1] for row in session.execute(sentiment_counts_query).all()}
         total_count = sum(sentiment_counts.values())
-        
+
+        recent_feedbacks_query = select(Feedback).where(
+            Feedback.business_id == business_id
+        ).order_by(Feedback.created_at.desc()).limit(10)
+
+        recent_feedbacks = []
+        for fb in session.scalars(recent_feedbacks_query).all():
+            customer_name = fb.customer.name if fb.customer else None
+            order_number = fb.order.order_number if fb.order else None
+            recent_feedbacks.append(
+                RecentFeedbackDTO(
+                    id=fb.id,
+                    sentiment=fb.sentiment,
+                    topic=fb.topic,
+                    comment=fb.comment,
+                    customer_name=customer_name,
+                    order_number=order_number,
+                    created_at=fb.created_at.isoformat(),
+                    raw_evidence=[ev.evidence_text for ev in fb.evidence]
+                )
+            )
+
         return FeedbackMetricsDTO(
             total_count=total_count,
-            sentiment_counts=sentiment_counts
+            sentiment_counts=sentiment_counts,
+            recent_feedbacks=recent_feedbacks
         )
 
     @staticmethod

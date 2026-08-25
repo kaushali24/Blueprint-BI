@@ -27,6 +27,7 @@ export default function OrderCard({ order }: OrderCardProps) {
           </h2>
           <p className="font-metadata text-metadata text-ci-secondary mt-1 line-clamp-2">
             {productLabel}
+            {order.item_count && order.item_count > 1 ? ` + ${order.item_count - 1} item${order.item_count > 2 ? 's' : ''}` : ''}
           </p>
         </div>
         <StatusBadge status={order.status} />

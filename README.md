@@ -1,7 +1,8 @@
-# Blueprint BI
+# Blueprint BI (ChatInsights)
+
 **Blueprint BI (ChatInsights)** is an AI-powered conversational business intelligence platform designed to help small and independent businesses turn customer conversations into structured business information and actionable insights.
 
-The initial MVP focuses on **WhatsApp exported chat data** and uses AI to identify customers, inquiries, orders, requirements, and feedback, making this information accessible through analytics and a natural-language business assistant.
+The MVP focuses on **WhatsApp exported chat data** and uses AI to identify customers, inquiries, orders, requirements, and feedback, making this information accessible through analytics and a natural-language business assistant.
 
 > **MVP Goal:** Transform unstructured WhatsApp conversations into structured business knowledge that a business owner can query and understand through AI.
 
@@ -22,19 +23,21 @@ As conversations grow, valuable business information becomes scattered across in
 - Customer feedback
 - Text and voice messages
 - Images and other media
+
 Manually reviewing these conversations to understand what is happening in the business can become time-consuming and inefficient.
 
 Business owners may want to ask questions such as:
 
 > "What product did customers ask about most?"
 
-> "How many inquiries became orders?"
+> "How many pending orders do I have?"
 
 > "What happened to this customer's order?"
 
-> "What questions do customers ask most frequently?"
+> "What are my recent unresolved inquiries?"
 
 > "What are customers saying about delivery?"
+
 Blueprint BI aims to turn these conversations into an evolving source of structured business knowledge.
 
 ---
@@ -53,9 +56,11 @@ Chat Parsing & Normalization
         ↓
 Business-Relevance Detection
         ↓
+Business Episode Grouping
+        ↓
 AI Information Extraction
         ↓
-Validation
+Validation & Atomic Replacement
         ↓
 Structured Business Data
         ↓
@@ -65,663 +70,267 @@ Analytics + AI Business Assistant
         ↓
 Business Owner
 ```
+
 The system is designed so that the current export-based ingestion approach can later be replaced or supplemented by a real-time WhatsApp Business Platform integration.
+
+---
+
+## Testing & Validation
+The MVP has been validated through:
+- automated backend tests
+- API/database verification
+- frontend TypeScript/lint/build checks
+- manual end-to-end demo scenarios
+
+Supporting evidence:
+- [docs/testing/](docs/testing/)
+- [docs/SUBMISSION_EVIDENCE.md](docs/SUBMISSION_EVIDENCE.md)
+- [docs/architecture/mvp-architecture.md](docs/architecture/mvp-architecture.md)
 
 ---
 
 # MVP Features
 
 ## 📥 WhatsApp Data Ingestion
-
 - Import WhatsApp exported chat ZIP files
 - Parse exported chat text files
-- Detect associated media
-- Import multiple conversations
-- Preserve original conversation data
+- Preserve original conversation data, including media filenames
 - Detect duplicate messages
-- Support incremental imports when an updated export is provided
-- Show import and processing status
-For example:
+- Support **incremental imports** when an updated export is provided
+- Show recent import history and processing status
 
-```
-Initial export:
-100 messages
-
-Updated export:
-120 messages
-
-System:
-100 existing messages
-20 new messages
-
-Database:
-120 messages
-```
 The MVP does **not** provide real-time WhatsApp synchronization.
 
 ---
 
 ## 🌍 Multilingual Conversation Understanding
 The MVP is designed to evaluate conversations containing:
-
 - English
 - Sinhala
 - Singlish / Romanized Sinhala
 - English + Sinhala mixed conversations
 - Informal conversational language
-Example:
 
-```
-"1kg chocolate cake eka kiyada?"
-```
-The system should understand this as a business inquiry about the price of a 1kg chocolate cake rather than treating it as ordinary English text.
+The system understands business intent across these languages, converting informal texts into structured order and inquiry entities.
 
 ---
 
 ## 🧠 AI Business Information Extraction
 The system extracts useful business information from relevant conversations, including:
-
 - Customers
-- Customer inquiries
+- Customer Inquiries
 - Products/services
 - Quantities
-- Dates
 - Prices
-- Requirements
-- Order status
-- Customer feedback
-Example:
+- Confirmed Orders
+- Pending Orders / Quotes
+- Customer Feedback
 
-```
-Customer:
-"Actually 1.5kg karanna."
-
-Extracted information:
-
-Intent:
-Order modification
-
-Product:
-Chocolate cake
-
-Quantity:
-1.5 kg
-```
-AI-derived information should remain associated with its source conversation/message where possible.
+AI-derived information is grounded, keeping explicit relational links to the originating WhatsApp `message_ids` for evidence.
 
 ---
 
-## 👥 Customer & Conversation Intelligence
-The system organizes customer interactions into structured records.
+## 👥 Customer Intelligence & Resolution
+The system associates customer interactions using available WhatsApp identity, participant, and conversation metadata. Customer resolution is heuristic and is designed to preserve existing identities conservatively during imports.
 
-A customer profile can provide:
-
-- Customer/contact information
-- Conversation history
-- Inquiries
-- Orders
-- Feedback
-- Last interaction
-The system also considers customer identity edge cases.
-
-For example:
-
-- Two customers may have the same name.
-- One customer may contact the business using multiple WhatsApp numbers.
-- A family member or friend may contact the business on behalf of another person.
-A new WhatsApp number will initially be treated as a separate identity. Potential relationships may be suggested, but important identity merges should require business-owner confirmation.
+Important merges or CRM-like contact management require human-in-the-loop review (future scope).
 
 ---
 
 ## 📦 Order & Inquiry Intelligence
-The system identifies business inquiries and confirmed orders from conversations.
+The system isolates distinct business episodes to correctly classify orders.
+Current states include:
+- **Pending** (e.g., quotes, unconfirmed intent)
+- **Confirmed** (e.g., agreed purchases)
+- **Cancelled**
 
-It can capture information such as:
-
-```
-Customer
-Product / Service
-Quantity
-Price
-Date
-Delivery / Service requirements
-Order status
-```
-Possible order states include:
-
-- Inquiry
-- Confirmed
-- Completed
-- Cancelled
-- Unknown
-The system should also recognize basic order modifications.
+Inquiries (unresolved questions) are tracked distinctly from orders.
 
 ---
 
 ## 💬 Customer Feedback
-Customers may provide useful feedback after receiving a product or service.
+Customers may provide useful feedback after receiving a product or service. Blueprint BI identifies feedback (positive, negative, neutral) regarding product quality, delivery, and taste.
 
-Blueprint BI aims to identify:
-
-- Positive feedback
-- Negative feedback
-- Mixed feedback
-- Neutral feedback
-Potential feedback topics include:
-
-- Product quality
-- Taste
-- Appearance
-- Delivery
-- Price
-- Customer service
-- Customization
-This allows the business owner to understand not only what customers **ordered**, but also what they **said afterwards**.
+Feedback remains tied to the specific message evidence and survives incremental re-imports.
 
 ---
 
 ## 📊 Business Insights & Analytics
-The MVP provides structured business analytics such as:
-
-- Total customers
-- New customers
-- Returning customers
-- Total inquiries
+The MVP provides deterministic, structured business analytics, such as:
+- Total known customers and repeat customer count
+- Total inquiries and open/unresolved inquiries
+- Pending orders
 - Confirmed orders
-- Inquiry-to-order conversion
-- Frequently requested products/services
-- Frequently asked questions
-- Customer feedback patterns
-Quantitative calculations are performed using structured business data rather than relying only on the language model.
+- Confirmed revenue (explicitly excluding pending quotes)
+- Top products (by confirmed volume)
+- Feedback metrics and recent feedback
+
+Quantitative calculations are performed via backend SQL aggregations, strictly bounding the LLM to prevent hallucination of core metrics.
 
 ---
 
 ## 🤖 Natural-Language Business Assistant
-The business owner can ask questions naturally instead of manually searching through conversations.
+The LangGraph-powered AI assistant allows the business owner to ask questions naturally in English, Sinhala, or Singlish.
 
-Examples:
+The Assistant uses deterministic tools to query the Analytics layer and database. Markdown responses are rendered in the frontend.
 
-```
-"What product was requested most frequently?"
-
-"How many inquiries became orders?"
-
-"What happened to Nethmi's order?"
-
-"What are customers asking about most?"
-
-"Who are my returning customers?"
-
-"What are customers saying about delivery?"
-```
-The AI assistant uses controlled tools to retrieve relevant business data and conversations before generating an answer.
-
-Where possible, important answers should provide supporting conversation/data references.
+Browser chat-session history supports navigation and persistence. The backend assistant remains strictly stateless between API requests.
 
 ---
 
-# Multimodal Data
-WhatsApp conversations can contain different types of media.
-
-### MVP Priority
-Text conversation processing is the primary focus.
-
-### Secondary / Optional
-The architecture may support:
-
-- Images
-- Voice notes
-- Post-call voice summaries
-
-### Future
-Advanced video understanding is outside the core MVP.
-
-Future processing could potentially combine:
-
-```
-Video
- ├── Key frames → Vision
- └── Audio → Speech-to-text
-                  ↓
-           Multimodal analysis
-```
-Direct WhatsApp voice/video call recording and analysis are **not part of the MVP**.
+# Multimodal Limitations
+- **Media Preservation:** Media references and filenames are preserved from the ZIP exports.
+- **Image/Voice Interpretation:** Advanced image understanding and voice-to-text are out of scope for the current MVP.
 
 ---
 
 # Human-in-the-Loop Validation
-AI extraction can be uncertain.
-
-Therefore, important AI-derived information should be reviewable by the business owner.
-
-For example:
-
-```
-Possible customer match
-
-Customer A
-        ↕
-Customer B
-
-The system believes these may be
-the same customer.
-
-[Confirm]   [Keep Separate]
-```
-Similarly, uncertain order or customer information can be reviewed and corrected.
-
-The goal is not to assume that the AI is always correct, but to provide useful automation while keeping the business owner in control.
+AI extraction can be uncertain. Important AI-derived information provides direct links back to the original WhatsApp message evidence, ensuring the business owner can verify the AI's conclusions. Direct editing and identity merges are identified as necessary future features.
 
 ---
 
 # MVP Scope
-
 ## ✅ Must Have
-
-- WhatsApp ZIP ingestion
-- Chat parsing
-- Message normalization
-- SQLite database
-- Duplicate detection
-- Incremental import
-- Customer extraction
-- Inquiry extraction
-- Order extraction
-- Basic feedback extraction
-- Business/personal relevance detection
+- WhatsApp ZIP ingestion, parsing, duplicate detection, incremental import
 - English/Sinhala/Singlish evaluation
-- Basic business analytics
-- AI business assistant
-- Database/analytics tools
+- SQLite database persistence
+- Customer, Inquiry, Order (Pending/Confirmed), and Feedback extraction
+- Business/personal relevance detection
+- Basic deterministic analytics
+- AI business assistant with tool use
 - Source/evidence references
-
-## 🟡 Should Have
-
-- Basic image processing
-- Voice-note transcription
-- Customer search/filtering
-- Customer identity suggestions
-- Post-call voice summaries
-- Mobile-responsive interface
+- Next.js responsive frontend (Overview, Imports, Orders, Inquiries, Assistant)
 
 ## 🔵 Future Scope
-
 - Real-time WhatsApp Business API integration
-- WhatsApp webhooks
-- Automatic WhatsApp messaging
-- Direct WhatsApp call recording
-- Advanced video understanding
-- Advanced customer identity resolution
-- Advanced forecasting
+- Advanced multimodal understanding (Images/Voice)
+- Advanced customer identity resolution UI
+- PostgreSQL-based production storage
 - Full CRM capabilities
-- Accounting/payment integration
-- Production-scale infrastructure
+- Production Authentication/Authorization
 
 ---
 
 # MVP Architecture
 
-```
-                    WhatsApp Export ZIP
-                           │
-                           ▼
-                    Ingestion Service
-                           │
-                           ▼
-                  Chat / Media Parser
-                           │
-                           ▼
-                 Message Normalization
-                           │
-                           ▼
-               Business Relevance Check
-                           │
-                           ▼
-               AI Information Extraction
-                           │
-                           ▼
-                     Validation
-                           │
-                           ▼
-                        SQLite
-                    ┌──────┴──────┐
-                    │             │
-                    ▼             ▼
-                Analytics     Agent Tools
-                                  │
-                                  ▼
-                           LangGraph Agent
-                                  │
-                                  ▼
-                         AI Business Assistant
-                                  │
-                                  ▼
-                           Business Owner
-```
+See [docs/architecture/mvp-architecture.md](docs/architecture/mvp-architecture.md) for the detailed architecture diagram and technical boundaries.
 
 ---
 
 # Technology Stack
-LayerTechnologyFrontendNext.jsBackendPython + FastAPIDatabaseSQLiteORMSQLAlchemyAgentLangGraphLLM FrameworkLangChainAI ModelLLM with structured-output capabilitiesDevelopmentAI-assisted developmentSpecificationOpenSpecVersion ControlGit / GitHubTechnology choices may evolve during MVP development where necessary, while the SRS and OpenSpec specifications remain the source of truth for requirements.
+
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js, React, TypeScript, Tailwind CSS, shadcn/ui |
+| Backend | Python, FastAPI |
+| Database | SQLite, SQLAlchemy |
+| Agent | LangGraph, LangChain |
+| AI Model | Gemini 3.6 Flash |
+| Development | OpenSpec, AI-Assisted Iteration |
 
 ---
 
 # Project Structure
 
-```
-Blueprint BI/
-│
+```text
+Blueprint-BI/
 ├── backend/
 │   ├── app/
-│   │   ├── agent.py
-│   │   └── ...
-│   ├── requirements.txt
-│   └── langgraph.json
-│
+│   │   ├── analytics/
+│   │   ├── api/
+│   │   ├── assistant/
+│   │   ├── database/
+│   │   ├── extraction/
+│   │   ├── ingestion/
+│   │   └── relevance/
+│   ├── scripts/
+│   └── .env.example
 ├── frontend/
 │   └── agent-chat-ui/
 │       ├── src/
-│       ├── package.json
-│       └── README.md
-│
+│       │   ├── app/
+│       │   ├── components/
+│       │   ├── hooks/
+│       │   └── lib/
+│       ├── .env.example
+│       └── package.json
+├── demo-data/
 ├── docs/
-│   └── SRS.md
-│
+│   ├── architecture/
+│   ├── development/
+│   ├── testing/
+│   └── SUBMISSION_EVIDENCE.md
 ├── openspec/
-│   ├── specs/
-│   └── changes/
-│
+│   ├── changes/
+│   └── specs/
 ├── tests/
-│
-├── data/
-│
+├── pytest.ini
 └── README.md
 ```
-
-> The exact project structure may evolve as implementation progresses.
-
----
-
-# Three-Week MVP Roadmap
-The MVP is being developed using a highly focused three-week schedule.
-
-## Week 1 — Data Foundation
-**Goal:** Reliably ingest WhatsApp exported data.
-
-```
-WhatsApp ZIP
-      ↓
-ZIP Extraction
-      ↓
-Chat Parser
-      ↓
-Message Normalization
-      ↓
-SQLite
-      ↓
-Duplicate Detection
-      ↓
-Incremental Import
-      ↓
-Conversation Viewer
-```
-
-### Milestone M1
-**Reliable WhatsApp Data Foundation**
-
----
-
-## Week 2 — Business Intelligence
-**Goal:** Transform conversations into structured business knowledge.
-
-```
-Conversation
-      ↓
-AI Extraction
-      ↓
-Business Relevance
-      ↓
-Customers
-      ↓
-Inquiries
-      ↓
-Orders
-      ↓
-Feedback
-      ↓
-Analytics
-```
-
-### Milestone M2
-**Conversation → Business Intelligence**
-
----
-
-## Week 3 — AI Assistant & MVP Integration
-**Goal:** Make the system usable and demonstrable.
-
-```
-Structured Data
-      +
-Analytics
-      ↓
-Agent Tools
-      ↓
-LangGraph Agent
-      ↓
-AI Business Assistant
-      ↓
-Dashboard
-```
-
-### Milestone M3
-**Demonstrable ChatInsights MVP**
-
-The core functional MVP is targeted for completion during the **first half of Week 3**.
-
-The remainder of Week 3 is reserved for:
-
-- Testing
-- Bug fixing
-- Evaluation
-- UI refinement
-- Demo dataset preparation
-- Documentation
-- Demonstration preparation
 
 ---
 
 # Development Methodology
-Blueprint BI follows a **Specification-Driven Development (SDD)** approach using OpenSpec.
+Blueprint BI utilizes a **Hybrid Development Methodology**:
+- **Specification-Driven Development (OpenSpec):** Used for foundational architectural capabilities and selected planned changes.
+- **AI-Assisted Direct Iteration:** AI coding agents were used extensively for implementation assistance, debugging, UX, testing, and hardening. Changes were reviewed using code inspection, tests, and manual verification. Not every AI-assisted change has an OpenSpec artifact.
 
-The project uses different levels of documentation for different purposes:
-
-```
-SRS
- │
- │ Overall product requirements
- ▼
-OpenSpec
- │
- │ Feature-level specifications
- ▼
-Implementation
- │
- │ AI-assisted development
- ▼
-Testing
- │
- ▼
-Validated Feature
-```
-The general OpenSpec workflow is:
-
-```
-Explore
-   ↓
-Propose
-   ↓
-Review Specification
-   ↓
-Apply
-   ↓
-Test
-   ↓
-Archive
-```
-The SRS defines the overall MVP boundary, while OpenSpec changes define individual implementation capabilities.
+For detailed evidence, see [docs/development/ai-assisted-development.md](docs/development/ai-assisted-development.md) and [docs/development/development-methodology.md](docs/development/development-methodology.md).
 
 ---
 
 # Getting Started
 
 ## Prerequisites
-
-- Python 3.10+
-- Node.js
-- pnpm
+- Python 3.11
+- Node.js & pnpm
 - Git
 
 ## Backend
-
-```
+```bash
 cd backend
-
 python -m venv .venv
-```
 
-### Windows
-
-```
+# Windows:
 .venv\Scripts\activate
-```
+# macOS/Linux:
+# source .venv/bin/activate
 
-### macOS / Linux
-
-```
-source .venv/bin/activate
-```
-Install dependencies:
-
-```
 pip install -r requirements.txt
+
+# Windows PowerShell:
+Copy-Item .env.example .env
+# macOS/Linux:
+# cp .env.example .env
 ```
-Start the backend using the project's configured FastAPI/LangGraph development command.
+*(Add your `GOOGLE_API_KEY` to the `.env` file)*
 
-> The exact command may change as the backend architecture is implemented. Keep this section synchronized with the actual project configuration.
-
----
+```bash
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
 
 ## Frontend
-
-```
+```bash
 cd frontend/agent-chat-ui
-
 pnpm install
+
+# Windows PowerShell:
+Copy-Item .env.example .env
+# macOS/Linux:
+# cp .env.example .env
+
 pnpm dev
 ```
-The development frontend is expected to run at:
+Access the application at `http://localhost:3000`.
 
-```
-http://localhost:3000
-```
-
----
-
-# Environment Variables
-Environment configuration will depend on the selected AI provider and backend implementation.
-
-Example:
-
-```
-# Backend
-API_URL=http://localhost:8000
-
-# AI provider configuration
-# Add provider-specific variables here
-```
-Do not commit API keys or other secrets to the repository.
-
----
-
-# Documentation
-The project documentation is organized as follows:
-
-DocumentPurpose`README.md`Project overview, setup, scope, and development roadmap`docs/SRS.md`Complete MVP software requirements`openspec/specs/`Current feature specifications`openspec/changes/`Feature-level implementation changes`frontend/agent-chat-ui/README.md`Frontend-specific documentation
 ---
 
 # Current Status
-🚧 **MVP Development — AI LaunchPad**
+**Functional MVP — Final Validation / Demo Preparation**
 
-### Current focus
-Building the three-week MVP according to the SRS and OpenSpec specifications.
-
-### Development priorities
-
-1. WhatsApp data ingestion
-2. Reliable structured data storage
-3. AI business information extraction
-4. Business analytics
-5. AI business assistant
-6. End-to-end MVP validation
+The MVP has reached its targeted feature boundaries. Current focus is strictly on demo rehearsal, testing evidence generation, and submission readiness.
 
 ---
 
-# Important MVP Constraints
-The current MVP intentionally does **not** attempt to provide real-time WhatsApp synchronization.
 
-The initial data flow is:
-
-```
-WhatsApp
-    ↓
-Export Chat
-    ↓
-ZIP File
-    ↓
-ChatInsights
-```
-This allows the core business intelligence problem to be validated before investing in WhatsApp Business Platform/API integration.
-
-Similarly, advanced video processing, full CRM functionality, accounting, payments, and advanced forecasting are outside the current MVP scope.
-
----
-
-# Future Direction
-After validating the MVP, the ingestion layer could evolve from:
-
-```
-WhatsApp Export ZIP
-        ↓
-ChatInsights
-```
-to:
-
-```
-WhatsApp Business Platform
-        ↓
-Webhook / API
-        ↓
-ChatInsights
-        ↓
-Real-Time Business Knowledge
-```
-Other potential future capabilities include:
-
-- Advanced multimodal conversation understanding
-- Video analysis
-- Better customer identity resolution
-- Semantic conversation search / RAG
-- Business forecasting
-- Customer segmentation
-- Cloud deployment
-- PostgreSQL-based production storage
-- CRM integrations
-
----
-
-# License
-See the relevant project/license files for licensing information.
-
----
-**Last Updated:** 2026-08-10
+**Last Updated:** 2026-08-25

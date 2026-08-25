@@ -12,6 +12,7 @@ class RecentOrderDTO(BaseModel):
     created_at: str
     customer_name: str | None = None
     first_product_name: str | None = None
+    item_count: int = 0
 
 
 class RecentInquiryDTO(BaseModel):
@@ -51,9 +52,21 @@ class CustomerMetricsDTO(BaseModel):
     repeat_customer_count: int
 
 
+class RecentFeedbackDTO(BaseModel):
+    id: int
+    sentiment: str
+    topic: str
+    comment: str
+    customer_name: str | None = None
+    order_number: str | None = None
+    created_at: str
+    raw_evidence: List[str] = []
+
+
 class FeedbackMetricsDTO(BaseModel):
     total_count: int
     sentiment_counts: dict[str, int]
+    recent_feedbacks: List[RecentFeedbackDTO] = []
 
 
 class BusinessAnalyticsReportDTO(BaseModel):

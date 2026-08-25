@@ -37,6 +37,7 @@ from app.database.models import (
     Order,
     OrderItem,
     Participant,
+    ImportBatch,
 )
 
 router = APIRouter(prefix="/api/v1/businesses/{business_id}", tags=["business-data"])
@@ -103,6 +104,7 @@ class OrderSummaryDTO(BaseModel):
     created_at: str
     customer_name: Optional[str]
     first_product_name: Optional[str]
+    item_count: int = 0
 
 
 class OrderDetailDTO(BaseModel):
@@ -164,6 +166,14 @@ class InquirySummaryDTO(BaseModel):
     customer_name: Optional[str]
 
 
+class ImportBatchDTO(BaseModel):
+    id: int
+    import_name: str
+    source_file_name: Optional[str]
+    status: str
+    created_at: str
+
+
 # ---------------------------------------------------------------------------
 # Helper: safe 404 for cross-business order access
 # ---------------------------------------------------------------------------
@@ -204,6 +214,7 @@ def get_analytics(
 
 @router.get("/orders", response_model=list[OrderSummaryDTO])
 def list_orders(
+    status: Optional[str] = None,
     business: Business = Depends(_get_business),
     db: Session = Depends(get_db),
 ) -> list[OrderSummaryDTO]:
@@ -222,8 +233,11 @@ def list_orders(
             joinedload(Order.extraction_target).joinedload(ExtractionTarget.end_message)
         )
         .where(Order.business_id == business.id)
-        .order_by(Order.created_at.desc(), Order.id.desc())
     )
+    if status:
+        stmt = stmt.where(Order.status == status)
+
+    stmt = stmt.order_by(Order.created_at.desc(), Order.id.desc())
     orders = db.scalars(stmt).unique().all()
 
     results: list[OrderSummaryDTO] = []
@@ -249,6 +263,7 @@ def list_orders(
                 created_at=order_date.isoformat(),
                 customer_name=customer_name,
                 first_product_name=first_product_name,
+                item_count=len(order.order_items)
             )
         )
     return results
@@ -275,13 +290,13 @@ def get_order(
         .where(Order.id == order_id)
     )
     order = db.scalars(stmt).unique().one_or_none()
-    
+
     if order is None or order.business_id != business.id:
         raise HTTPException(
             status_code=404,
             detail={"errors": [f"Order {order_id} was not found."]},
         )
-        
+
     customer_name: Optional[str] = order.customer.name if order.customer else None
 
     items = [
@@ -368,6 +383,7 @@ def get_order_evidence(
 
 @router.get("/inquiries", response_model=list[InquirySummaryDTO])
 def list_inquiries(
+    status: Optional[str] = None,
     business: Business = Depends(_get_business),
     db: Session = Depends(get_db),
 ) -> list[InquirySummaryDTO]:
@@ -385,16 +401,22 @@ def list_inquiries(
             joinedload(Inquiry.extraction_target).joinedload(ExtractionTarget.end_message)
         )
         .where(Inquiry.business_id == business.id)
-        .order_by(Inquiry.created_at.desc(), Inquiry.id.desc())
     )
+    if status:
+        if status == 'open':
+            stmt = stmt.where(Inquiry.status.not_in(['resolved', 'closed']))
+        else:
+            stmt = stmt.where(Inquiry.status == status)
+
+    stmt = stmt.order_by(Inquiry.created_at.desc(), Inquiry.id.desc())
     inquiries = db.scalars(stmt).unique().all()
-    
+
     results: list[InquirySummaryDTO] = []
     for inq in inquiries:
         inquiry_date = inq.created_at
         if inq.extraction_target and inq.extraction_target.end_message and inq.extraction_target.end_message.sent_at:
             inquiry_date = inq.extraction_target.end_message.sent_at
-            
+
         results.append(
             InquirySummaryDTO(
                 id=inq.id,
@@ -406,4 +428,34 @@ def list_inquiries(
             )
         )
 
+    return results
+
+
+@router.get("/imports", response_model=list[ImportBatchDTO])
+def list_imports(
+    business: Business = Depends(_get_business),
+    db: Session = Depends(get_db),
+) -> list[ImportBatchDTO]:
+    """
+    Returns the 5 most recent imports for the business.
+    """
+    stmt = (
+        select(ImportBatch)
+        .where(ImportBatch.business_id == business.id)
+        .order_by(ImportBatch.created_at.desc())
+        .limit(5)
+    )
+    imports = db.scalars(stmt).all()
+
+    results = []
+    for imp in imports:
+        results.append(
+            ImportBatchDTO(
+                id=imp.id,
+                import_name=imp.import_name,
+                source_file_name=imp.source_file_name,
+                status=imp.status,
+                created_at=imp.created_at.isoformat(),
+            )
+        )
     return results
