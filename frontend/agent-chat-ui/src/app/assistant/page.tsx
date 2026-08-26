@@ -1,5 +1,5 @@
-import AssistantThread from "@/components/assistant/AssistantThread";
+import AssistantLayout from "@/components/assistant/AssistantLayout";
 
 export default function AssistantPage() {
-  return <AssistantThread />;
+  return <AssistantLayout />;
 }

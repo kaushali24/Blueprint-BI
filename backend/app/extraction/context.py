@@ -1,22 +1,23 @@
+from datetime import timedelta
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from app.database.models import Message, RelevanceAssessment
 from app.extraction.constants import (
     CONTEXT_ALLOWED_STATES,
-    CONTEXT_WINDOW_BEFORE,
-    CONTEXT_WINDOW_AFTER,
+    MAX_EPISODE_GAP_DAYS,
 )
 
-def select_context_window(session: Session, target_message: Message, business_id: int) -> tuple[Message, list[Message]]:
-    """Select a bounded window of relevant context messages around a target message."""
+def select_episode_messages(session: Session, start_message: Message, business_id: int) -> list[Message]:
+    """Select all messages belonging to the business episode starting at start_message."""
     
-    # Query all eligible messages in the conversation ordered by sent_at
+    # Query all eligible messages in the conversation from the start_message onwards
     stmt = (
         select(Message)
         .join(RelevanceAssessment, Message.id == RelevanceAssessment.message_id)
         .where(
-            Message.conversation_id == target_message.conversation_id,
+            Message.conversation_id == start_message.conversation_id,
+            Message.sent_at >= start_message.sent_at,
             RelevanceAssessment.business_id == business_id,
             RelevanceAssessment.is_current == True,
             RelevanceAssessment.relevance_state.in_(CONTEXT_ALLOWED_STATES),
@@ -24,30 +25,17 @@ def select_context_window(session: Session, target_message: Message, business_id
         .order_by(Message.sent_at.asc(), Message.id.asc())
     )
     
-    # Actually wait, Message doesn't have business_id?
-    # Message has conversation_id. Conversation has business_id.
-    # RelevanceAssessment has business_id.
+    candidate_messages = session.scalars(stmt).all()
+    episode_messages = []
     
-    all_eligible = session.scalars(stmt).all()
-    
-    # Find the target message index
-    target_idx = -1
-    for i, msg in enumerate(all_eligible):
-        if msg.id == target_message.id:
-            target_idx = i
-            break
-            
-    if target_idx == -1:
-        # Target message might not be in the eligible list if it's somehow not in CONTEXT_ALLOWED_STATES,
-        # but the spec says "Always includes the target message". So we must ensure it is included.
-        # However, the task says: "Filters: include only messages with current RelevanceAssessment in CONTEXT_ALLOWED_STATES."
-        # If target is eligible, it's found.
-        # Just return target and only target if not found in list (shouldn't happen for eligible targets)
-        return target_message, [target_message]
+    for i, msg in enumerate(candidate_messages):
+        if i > 0:
+            prev_msg = episode_messages[-1]
+            if msg.sent_at and prev_msg.sent_at:
+                gap = msg.sent_at - prev_msg.sent_at
+                if gap > timedelta(days=MAX_EPISODE_GAP_DAYS):
+                    # Gap exceeds threshold, end of episode
+                    break
+        episode_messages.append(msg)
         
-    start_idx = max(0, target_idx - CONTEXT_WINDOW_BEFORE)
-    end_idx = min(len(all_eligible), target_idx + CONTEXT_WINDOW_AFTER + 1)
-    
-    context_messages = all_eligible[start_idx:end_idx]
-    
-    return target_message, list(context_messages)
+    return episode_messages

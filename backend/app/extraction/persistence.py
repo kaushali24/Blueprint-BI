@@ -16,6 +16,7 @@ def persist_extraction_results(
     inquiries: list[CandidateInquiry],
     feedbacks: list[CandidateFeedback],
     facts: list[CandidateFact],
+    extraction_target_id: int,
     model_name: str | None = None,
     model_version: str | None = None,
 ) -> None:
@@ -44,7 +45,8 @@ def persist_extraction_results(
             conversation_id=conversation_id,
             customer_id=customer_id,
             status=candidate.status,
-            total_amount=candidate.total_amount
+            total_amount=candidate.total_amount,
+            extraction_target_id=extraction_target_id
         )
         session.add(order)
         session.flush() # get order.id
@@ -87,6 +89,7 @@ def persist_extraction_results(
             inquiry_type=candidate.inquiry_type,
             summary=candidate.summary,
             status=status,
+            extraction_target_id=extraction_target_id
         )
         session.add(inquiry)
         session.flush()
@@ -107,6 +110,7 @@ def persist_extraction_results(
             sentiment=candidate.sentiment,
             topic=candidate.topic,
             comment=candidate.comment,
+            extraction_target_id=extraction_target_id
         )
         session.add(feedback)
         session.flush()
@@ -133,6 +137,7 @@ def persist_extraction_results(
             status=status,
             model_name=model_name,
             model_version=model_version,
+            extraction_target_id=extraction_target_id
         )
         session.add(fact)
         session.flush()

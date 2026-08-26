@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import PageHeader from "@/components/layout/PageHeader";
 import { useBusinessId } from "@/providers/BusinessProvider";
 import { apiClient } from "@/lib/api/client";
@@ -14,6 +14,7 @@ import AssistantCTACard from "@/components/overview/AssistantCTACard";
 import RecentOrdersList from "@/components/overview/RecentOrdersList";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 function OverviewSkeleton() {
   return (
@@ -72,7 +73,7 @@ export default function OverviewPage() {
   const [error, setError] = useState(false);
   const router = useRouter();
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
@@ -83,31 +84,32 @@ export default function OverviewPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [businessId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
-  }, [businessId]);
+  }, [loadData]);
 
   return (
     <div className="flex flex-col gap-6 w-full h-full">
       <PageHeader title="Business Overview" />
-      
+
       {loading ? (
         <OverviewSkeleton />
       ) : error ? (
-        <ErrorState 
-          title="Could not load your business overview." 
-          message="There was a problem fetching your data. Please try again." 
-          onRetry={loadData} 
+        <ErrorState
+          title="Could not load your business overview."
+          message="There was a problem fetching your data. Please try again."
+          onRetry={loadData}
         />
       ) : data ? (
         // Empty state check
-        data.order_metrics.total_count === 0 && 
-        data.customer_metrics.total_known_customers === 0 && 
+        data.order_metrics.total_count === 0 &&
+        data.customer_metrics.total_known_customers === 0 &&
         data.inquiry_metrics.total_count === 0 ? (
-          <EmptyState 
-            title="No business insights yet." 
+          <EmptyState
+            title="No business insights yet."
             message="Import your WhatsApp conversations to start building your business overview."
             action={{
               label: "Import WhatsApp Conversations",
@@ -117,32 +119,40 @@ export default function OverviewPage() {
           />
         ) : (
           <div className="flex flex-col gap-stack-gap-lg w-full">
-            <KnownRevenueCard 
-              knownTotalRevenue={data.order_metrics.known_total_revenue} 
-              ordersWithUnknownRevenueCount={data.order_metrics.orders_with_unknown_revenue_count} 
+            <KnownRevenueCard
+              knownTotalRevenue={data.order_metrics.known_total_revenue}
+              ordersWithUnknownRevenueCount={data.order_metrics.orders_with_unknown_revenue_count}
             />
-            
+
             <section className="grid grid-cols-2 md:grid-cols-4 gap-stack-gap-md">
-              <MetricCard 
-                title="Confirmed Orders" 
-                value={data.order_metrics.status_counts.confirmed ?? 0} 
-                icon="check_circle" 
-              />
-              <MetricCard 
-                title="Pending Orders" 
-                value={data.order_metrics.status_counts.pending ?? 0} 
-                icon="pending_actions" 
-              />
-              <MetricCard 
-                title="Customers" 
-                value={data.customer_metrics.total_known_customers ?? 0} 
-                icon="group" 
-              />
-              <MetricCard 
-                title="Open Inquiries" 
-                value={data.inquiry_metrics.status_counts.open ?? 0} 
-                icon="forum" 
-              />
+              <Link href="/orders?status=confirmed" className="block outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ci-primary h-full">
+                <MetricCard
+                  title="Confirmed Orders"
+                  value={data.order_metrics.status_counts.confirmed ?? 0}
+                  icon="check_circle"
+                />
+              </Link>
+              <Link href="/orders?status=pending" className="block outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ci-primary h-full">
+                <MetricCard
+                  title="Pending Orders"
+                  value={data.order_metrics.status_counts.pending ?? 0}
+                  icon="pending_actions"
+                />
+              </Link>
+              <Link href="/customers" className="block outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ci-primary h-full">
+                <MetricCard
+                  title="Customers"
+                  value={data.customer_metrics.total_known_customers ?? 0}
+                  icon="group"
+                />
+              </Link>
+              <Link href="/inquiries?status=open" className="block outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ci-primary h-full">
+                <MetricCard
+                  title="Open Inquiries"
+                  value={data.inquiry_metrics.status_counts.open ?? 0}
+                  icon="forum"
+                />
+              </Link>
             </section>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-stack-gap-lg w-full">

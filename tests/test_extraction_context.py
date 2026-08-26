@@ -1,78 +1,62 @@
-import pytest
 from datetime import datetime, timezone, timedelta
+import pytest
+from app.database.models import Message, RelevanceAssessment, Business, Conversation, ImportBatch
+from app.extraction.context import select_episode_messages
+from app.extraction.constants import MAX_EPISODE_GAP_DAYS
 
-from app.database.models import Message, RelevanceAssessment, Base
-from app.extraction.context import select_context_window
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-@pytest.fixture
-def db_session():
-    engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    yield session
-    session.close()
-
-def create_mock_message(id: int, conv_id: int, minutes_offset: int, relevance: str):
-    msg = Message(
-        id=id,
-        conversation_id=conv_id,
-        sent_at=datetime(2024, 1, 1, tzinfo=timezone.utc) + timedelta(minutes=minutes_offset)
-    )
-    # create assessment
-    assessment = RelevanceAssessment(
-        message_id=id,
-        conversation_id=conv_id,
-        business_id=1,
-        relevance_state=relevance,
-        is_current=True
-    )
-    # mock relationship for testing if needed
-    msg.relevance_assessments = [assessment]
-    return msg
-
-def test_select_context_window(db_session):
-    # This test will require actual database writes because of the select() statement
-    # Let's setup some messages in the db
-    from app.database.models import Business, Conversation
-    
-    business = Business(name="Test Bakery", slug="test-bakery")
+def test_select_episode_messages(db_session):
+    # Setup test data
+    business = Business(name="Test Business", slug="test-business")
     db_session.add(business)
-    db_session.commit()
-    
-    conv = Conversation(business_id=business.id, conversation_ref="ref1")
-    db_session.add(conv)
-    db_session.commit()
+    db_session.flush()
 
-    # Create 10 messages
+    batch = ImportBatch(business_id=business.id, import_name="test_import.zip")
+    db_session.add(batch)
+    db_session.flush()
+
+    conv = Conversation(business_id=business.id, import_batch_id=batch.id, conversation_ref="ref1")
+    db_session.add(conv)
+    db_session.flush()
+
+    base_time = datetime(2023, 1, 1, 10, 0, 0, tzinfo=timezone.utc)
+
+    # Create messages with varied gaps and relevance states
+    # 0: base_time (relevant) -> start of episode
+    # 1: base_time + 1 hour (needs_review) -> included
+    # 2: base_time + 2 hours (not_relevant) -> skipped by query
+    # 3: base_time + 1 day (relevant) -> included
+    # 4: base_time + 1 day + MAX_EPISODE_GAP_DAYS + 1 second (relevant) -> Exceeds gap, stops episode
+    # 5: base_time + 1 day + MAX_EPISODE_GAP_DAYS + 2 hours (relevant) -> Not included
+
+    times = [
+        base_time,
+        base_time + timedelta(hours=1),
+        base_time + timedelta(hours=2),
+        base_time + timedelta(days=1),
+        base_time + timedelta(days=1, seconds=(MAX_EPISODE_GAP_DAYS * 86400) + 1),
+        base_time + timedelta(days=1, hours=2, seconds=(MAX_EPISODE_GAP_DAYS * 86400) + 1),
+    ]
+
+    states = [
+        "relevant",
+        "needs_review",
+        "not_relevant",
+        "relevant",
+        "relevant",
+        "relevant"
+    ]
+
     messages = []
-    for i in range(1, 11):
+    for i, t in enumerate(times):
         msg = Message(
             conversation_id=conv.id,
-            sent_at=datetime(2024, 1, 1, tzinfo=timezone.utc) + timedelta(minutes=i),
-            content=f"msg {i}",
-            message_fingerprint=f"fp{i}"
+            content=f"Msg {i}",
+            sent_at=t
         )
         db_session.add(msg)
+        db_session.flush()
         messages.append(msg)
-    
-    db_session.commit()
-    
-    # Assign relevance
-    # 1: relevant
-    # 2: not_relevant (should be skipped)
-    # 3: relevant
-    # 4: pending (should be skipped)
-    # 5: needs_review
-    # 6: relevant (target)
-    # 7: relevant
-    # 8: relevant
-    # 9: relevant
-    # 10: relevant
-    states = ["relevant", "not_relevant", "relevant", "pending", "needs_review", "relevant", "relevant", "relevant", "relevant", "relevant"]
-    for i, msg in enumerate(messages):
+
         ra = RelevanceAssessment(
             message_id=msg.id,
             conversation_id=conv.id,
@@ -83,25 +67,12 @@ def test_select_context_window(db_session):
         db_session.add(ra)
     db_session.commit()
 
-    target = messages[5] # msg 6
-    # Eligible messages (states in relevant/needs_review):
-    # msg 1, 3, 5, 6, 7, 8, 9, 10
-    # Before target (msg 6): 5 before it max -> we have 1, 3, 5 (3 messages)
-    # After target: 2 after it max -> we have 7, 8
-    
-    t_msg, context = select_context_window(db_session, target, business.id)
-    
-    assert t_msg.id == target.id
-    assert len(context) == 6 # 1, 3, 5, 6, 7, 8
-    
-    ids = [m.id for m in context]
-    assert messages[0].id in ids # msg 1
-    assert messages[1].id not in ids # msg 2 (not_relevant)
-    assert messages[2].id in ids # msg 3
-    assert messages[3].id not in ids # msg 4 (pending)
-    assert messages[4].id in ids # msg 5 (needs_review)
-    assert messages[5].id in ids # msg 6 (target)
-    assert messages[6].id in ids # msg 7
-    assert messages[7].id in ids # msg 8
-    assert messages[8].id not in ids # msg 9 (outside window)
-    assert messages[9].id not in ids # msg 10 (outside window)
+    start_message = messages[0]
+
+    episode = select_episode_messages(db_session, start_message, business.id)
+
+    # Expected: messages[0], messages[1], messages[3]
+    assert len(episode) == 3
+    assert episode[0].id == messages[0].id
+    assert episode[1].id == messages[1].id
+    assert episode[2].id == messages[3].id

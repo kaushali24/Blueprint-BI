@@ -39,18 +39,22 @@ export default function RecentOrdersList({ orders }: RecentOrdersListProps) {
       </div>
       <div className="flex flex-col gap-3">
         {orders.map((order) => (
-          <div key={order.id} className="bg-ci-surface-container-lowest border border-ci-outline-variant rounded-xl p-card-padding flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 min-w-0">
-            <div className="flex flex-col gap-1 w-full sm:w-auto min-w-0">
-              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <span className="body-md font-semibold text-ci-on-surface break-words">{order.order_number || `Order #${order.id}`}</span>
-                <StatusBadge status={order.status} />
+          <Link key={order.id} href={`/orders/${order.id}`} className="block outline-none rounded-xl focus-visible:ring-2 focus-visible:ring-ci-primary">
+            <div className="bg-ci-surface-container-lowest border border-ci-outline-variant hover:bg-ci-surface-container-low transition-colors rounded-xl p-card-padding flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 min-w-0">
+              <div className="flex flex-col gap-1 w-full sm:w-auto min-w-0">
+                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                  <span className="body-md font-semibold text-ci-on-surface break-words">
+                    {order.order_number || (order.customer_name ? `Order from ${order.customer_name}` : (order.first_product_name || `Order #${order.id}`))}
+                  </span>
+                  <StatusBadge status={order.status} />
+                </div>
+              </div>
+              <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto mt-2 sm:mt-0">
+                <AmountDisplay amount={order.total_amount} />
+                <span className="metadata text-ci-secondary">{formatTime(order.created_at)}</span>
               </div>
             </div>
-            <div className="flex sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto mt-2 sm:mt-0">
-              <AmountDisplay amount={order.total_amount} />
-              <span className="metadata text-ci-secondary">{formatTime(order.created_at)}</span>
-            </div>
-          </div>
+          </Link>
         ))}
       </div>
     </section>

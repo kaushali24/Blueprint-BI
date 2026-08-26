@@ -21,7 +21,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.analytics.schemas import BusinessAnalyticsReportDTO
@@ -31,11 +31,13 @@ from app.database.models import (
     Business,
     Customer,
     ExtractionEvidence,
+    ExtractionTarget,
     Inquiry,
     Message,
     Order,
     OrderItem,
     Participant,
+    ImportBatch,
 )
 
 router = APIRouter(prefix="/api/v1/businesses/{business_id}", tags=["business-data"])
@@ -102,6 +104,7 @@ class OrderSummaryDTO(BaseModel):
     created_at: str
     customer_name: Optional[str]
     first_product_name: Optional[str]
+    item_count: int = 0
 
 
 class OrderDetailDTO(BaseModel):
@@ -163,6 +166,32 @@ class InquirySummaryDTO(BaseModel):
     customer_name: Optional[str]
 
 
+class ImportBatchDTO(BaseModel):
+    id: int
+    import_name: str
+    source_file_name: Optional[str]
+    status: str
+    created_at: str
+
+
+class CustomerSummaryDTO(BaseModel):
+    """
+    Source: Customer + Order/Inquiry count aggregations.
+
+    id:            Customer.id
+    name:          Customer.name
+    phone_number:  Customer.phone_number (str | None)
+    order_count:   int (number of orders associated with this customer and business)
+    inquiry_count: int (number of inquiries associated with this customer and business)
+    """
+
+    id: int
+    name: str
+    phone_number: Optional[str] = None
+    order_count: int = 0
+    inquiry_count: int = 0
+
+
 # ---------------------------------------------------------------------------
 # Helper: safe 404 for cross-business order access
 # ---------------------------------------------------------------------------
@@ -203,6 +232,7 @@ def get_analytics(
 
 @router.get("/orders", response_model=list[OrderSummaryDTO])
 def list_orders(
+    status: Optional[str] = None,
     business: Business = Depends(_get_business),
     db: Session = Depends(get_db),
 ) -> list[OrderSummaryDTO]:
@@ -212,12 +242,21 @@ def list_orders(
     Derives customer_name from Order.customer (nullable join).
     Derives first_product_name from the first OrderItem by insertion order.
     """
+    from sqlalchemy.orm import joinedload
     stmt = (
         select(Order)
+        .options(
+            joinedload(Order.customer),
+            joinedload(Order.order_items),
+            joinedload(Order.extraction_target).joinedload(ExtractionTarget.end_message)
+        )
         .where(Order.business_id == business.id)
-        .order_by(Order.created_at.desc(), Order.id.desc())
     )
-    orders = db.scalars(stmt).all()
+    if status:
+        stmt = stmt.where(Order.status == status)
+
+    stmt = stmt.order_by(Order.created_at.desc(), Order.id.desc())
+    orders = db.scalars(stmt).unique().all()
 
     results: list[OrderSummaryDTO] = []
     for order in orders:
@@ -228,15 +267,21 @@ def list_orders(
         first_item: Optional[OrderItem] = order.order_items[0] if order.order_items else None
         first_product_name: Optional[str] = first_item.product_name if first_item else None
 
+        # Use the end of the episode as the date, if available.
+        order_date = order.created_at
+        if order.extraction_target and order.extraction_target.end_message and order.extraction_target.end_message.sent_at:
+            order_date = order.extraction_target.end_message.sent_at
+
         results.append(
             OrderSummaryDTO(
                 id=order.id,
                 order_number=order.order_number,
                 status=order.status,
                 total_amount=order.total_amount,  # NULL stays NULL
-                created_at=order.created_at.isoformat(),
+                created_at=order_date.isoformat(),
                 customer_name=customer_name,
                 first_product_name=first_product_name,
+                item_count=len(order.order_items)
             )
         )
     return results
@@ -252,7 +297,24 @@ def get_order(
     Returns a single order with all its items.
     Cross-business order IDs return 404 — same as nonexistent.
     """
-    order = _get_order_for_business(order_id, business.id, db)
+    from sqlalchemy.orm import joinedload
+    stmt = (
+        select(Order)
+        .options(
+            joinedload(Order.customer),
+            joinedload(Order.order_items),
+            joinedload(Order.extraction_target).joinedload(ExtractionTarget.end_message)
+        )
+        .where(Order.id == order_id)
+    )
+    order = db.scalars(stmt).unique().one_or_none()
+
+    if order is None or order.business_id != business.id:
+        raise HTTPException(
+            status_code=404,
+            detail={"errors": [f"Order {order_id} was not found."]},
+        )
+
     customer_name: Optional[str] = order.customer.name if order.customer else None
 
     items = [
@@ -265,12 +327,16 @@ def get_order(
         for item in order.order_items
     ]
 
+    order_date = order.created_at
+    if order.extraction_target and order.extraction_target.end_message and order.extraction_target.end_message.sent_at:
+        order_date = order.extraction_target.end_message.sent_at
+
     return OrderDetailDTO(
         id=order.id,
         order_number=order.order_number,
         status=order.status,
         total_amount=order.total_amount,  # NULL stays NULL
-        created_at=order.created_at.isoformat(),
+        created_at=order_date.isoformat(),
         customer_name=customer_name,
         items=items,
     )
@@ -335,6 +401,7 @@ def get_order_evidence(
 
 @router.get("/inquiries", response_model=list[InquirySummaryDTO])
 def list_inquiries(
+    status: Optional[str] = None,
     business: Business = Depends(_get_business),
     db: Session = Depends(get_db),
 ) -> list[InquirySummaryDTO]:
@@ -344,21 +411,125 @@ def list_inquiries(
     Derives customer_name from Inquiry.customer (nullable join).
     Does not expose confidence or internal extraction metadata.
     """
+    from sqlalchemy.orm import joinedload
     stmt = (
         select(Inquiry)
-        .where(Inquiry.business_id == business.id)
-        .order_by(Inquiry.created_at.desc(), Inquiry.id.desc())
-    )
-    inquiries = db.scalars(stmt).all()
-
-    return [
-        InquirySummaryDTO(
-            id=inq.id,
-            inquiry_type=inq.inquiry_type,
-            summary=inq.summary,
-            status=inq.status,
-            created_at=inq.created_at.isoformat(),
-            customer_name=inq.customer.name if inq.customer else None,
+        .options(
+            joinedload(Inquiry.customer),
+            joinedload(Inquiry.extraction_target).joinedload(ExtractionTarget.end_message)
         )
-        for inq in inquiries
-    ]
+        .where(Inquiry.business_id == business.id)
+    )
+    if status:
+        if status == 'open':
+            stmt = stmt.where(Inquiry.status.not_in(['resolved', 'closed']))
+        else:
+            stmt = stmt.where(Inquiry.status == status)
+
+    stmt = stmt.order_by(Inquiry.created_at.desc(), Inquiry.id.desc())
+    inquiries = db.scalars(stmt).unique().all()
+
+    results: list[InquirySummaryDTO] = []
+    for inq in inquiries:
+        inquiry_date = inq.created_at
+        if inq.extraction_target and inq.extraction_target.end_message and inq.extraction_target.end_message.sent_at:
+            inquiry_date = inq.extraction_target.end_message.sent_at
+
+        results.append(
+            InquirySummaryDTO(
+                id=inq.id,
+                inquiry_type=inq.inquiry_type,
+                summary=inq.summary,
+                status=inq.status,
+                created_at=inquiry_date.isoformat(),
+                customer_name=inq.customer.name if inq.customer else None,
+            )
+        )
+
+    return results
+
+
+@router.get("/imports", response_model=list[ImportBatchDTO])
+def list_imports(
+    business: Business = Depends(_get_business),
+    db: Session = Depends(get_db),
+) -> list[ImportBatchDTO]:
+    """
+    Returns the 5 most recent imports for the business.
+    """
+    stmt = (
+        select(ImportBatch)
+        .where(
+            ImportBatch.business_id == business.id,
+            ImportBatch.status.in_(["completed", "partial"]),
+        )
+        .order_by(ImportBatch.created_at.desc())
+    )
+    imports = db.scalars(stmt).all()
+
+    results = []
+    for imp in imports:
+        results.append(
+            ImportBatchDTO(
+                id=imp.id,
+                import_name=imp.import_name,
+                source_file_name=imp.source_file_name,
+                status=imp.status,
+                created_at=imp.created_at.isoformat(),
+            )
+        )
+    return results
+
+
+@router.get("/customers", response_model=list[CustomerSummaryDTO])
+def list_customers(
+    business: Business = Depends(_get_business),
+    db: Session = Depends(get_db),
+) -> list[CustomerSummaryDTO]:
+    """
+    Returns all customers identified for the business.
+    Enforces Customer.business_id == business.id.
+    Includes aggregated order_count and inquiry_count for each customer.
+    Sorted by most recently created first.
+    """
+    order_count_subq = (
+        select(func.count(Order.id))
+        .where(
+            Order.customer_id == Customer.id,
+            Order.business_id == business.id,
+        )
+        .scalar_subquery()
+    )
+    inquiry_count_subq = (
+        select(func.count(Inquiry.id))
+        .where(
+            Inquiry.customer_id == Customer.id,
+            Inquiry.business_id == business.id,
+        )
+        .scalar_subquery()
+    )
+
+    stmt = (
+        select(
+            Customer,
+            order_count_subq.label("order_count"),
+            inquiry_count_subq.label("inquiry_count"),
+        )
+        .where(Customer.business_id == business.id)
+        .order_by(Customer.created_at.desc(), Customer.id.desc())
+    )
+
+    rows = db.execute(stmt).all()
+
+    results: list[CustomerSummaryDTO] = []
+    for customer, order_count, inquiry_count in rows:
+        results.append(
+            CustomerSummaryDTO(
+                id=customer.id,
+                name=customer.name,
+                phone_number=customer.phone_number,
+                order_count=order_count or 0,
+                inquiry_count=inquiry_count or 0,
+            )
+        )
+    return results

@@ -65,7 +65,7 @@ class ImportCoordinator:
                     business_id=business_id,
                 )
                 session.commit()
-                logger.info("Extracted entities from %d messages for batch %d", extracted_count, batch_result.import_batch_id)
+                logger.info("Extracted entities from %d episodes for batch %d", extracted_count, batch_result.import_batch_id)
         except Exception as exc:
             logger.warning(
                 "Extraction failed for import_batch_id=%d: %s",

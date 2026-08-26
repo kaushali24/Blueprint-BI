@@ -17,7 +17,7 @@ export default function StarterQuestions({ onSelect, disabled = false }: Starter
       <p className="font-label-caps text-label-caps text-ci-secondary mb-2 px-2 uppercase tracking-widest">
         Suggested Queries
       </p>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-3">
         {STARTER_QUESTIONS.map((question) => (
           <button
             key={question}
