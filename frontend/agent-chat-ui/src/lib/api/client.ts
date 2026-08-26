@@ -7,6 +7,7 @@ import {
   ImportResultDTO,
   ChatResponseDTO,
   ImportBatchDTO,
+  CustomerSummaryDTO,
 } from "./types";
 
 export class ApiError extends Error {
@@ -71,6 +72,9 @@ export const apiClient = {
 
   getInquiries: (businessId: number, status?: string): Promise<InquirySummaryDTO[]> =>
     fetchWithHandling(`${API_URL}/api/v1/businesses/${businessId}/inquiries${status ? `?status=${status}` : ''}`),
+
+  getCustomers: (businessId: number): Promise<CustomerSummaryDTO[]> =>
+    fetchWithHandling(`${API_URL}/api/v1/businesses/${businessId}/customers`),
 
   getRecentImports: (businessId: number): Promise<ImportBatchDTO[]> =>
     fetchWithHandling(`${API_URL}/api/v1/businesses/${businessId}/imports`),

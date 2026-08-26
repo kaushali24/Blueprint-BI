@@ -11,9 +11,10 @@ export default function KnownRevenueCard({
   ordersWithUnknownRevenueCount,
 }: KnownRevenueCardProps) {
   return (
-    <section className="flex flex-col items-center justify-center pt-6 pb-10 text-center">
-      <h2 className="label-caps text-ci-secondary uppercase mb-4 tracking-wider">Known Revenue</h2>
+    <section className="flex flex-col items-center justify-center pt-2 pb-6 text-center gap-1">
+      <h2 className="label-caps text-ci-secondary uppercase tracking-wider">Known Revenue</h2>
       <AmountDisplay amount={knownTotalRevenue} variant="hero" />
+      <span className="body-sm text-ci-secondary mt-1">From confirmed orders with known amounts</span>
       {ordersWithUnknownRevenueCount > 0 && (
         <div className="flex items-start justify-center gap-1.5 mt-2 text-ci-secondary metadata max-w-sm md:max-w-md text-center px-2">
           <Icons.info className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />

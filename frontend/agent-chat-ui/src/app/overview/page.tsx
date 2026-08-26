@@ -125,28 +125,28 @@ export default function OverviewPage() {
             />
 
             <section className="grid grid-cols-2 md:grid-cols-4 gap-stack-gap-md">
-              <Link href="/orders?status=confirmed" className="block outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ci-primary">
+              <Link href="/orders?status=confirmed" className="block outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ci-primary h-full">
                 <MetricCard
                   title="Confirmed Orders"
                   value={data.order_metrics.status_counts.confirmed ?? 0}
                   icon="check_circle"
                 />
               </Link>
-              <Link href="/orders?status=pending" className="block outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ci-primary">
+              <Link href="/orders?status=pending" className="block outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ci-primary h-full">
                 <MetricCard
                   title="Pending Orders"
                   value={data.order_metrics.status_counts.pending ?? 0}
                   icon="pending_actions"
                 />
               </Link>
-              <Link href="/customers" className="block outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ci-primary">
+              <Link href="/customers" className="block outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ci-primary h-full">
                 <MetricCard
                   title="Customers"
                   value={data.customer_metrics.total_known_customers ?? 0}
                   icon="group"
                 />
               </Link>
-              <Link href="/inquiries?status=open" className="block outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ci-primary">
+              <Link href="/inquiries?status=open" className="block outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-ci-primary h-full">
                 <MetricCard
                   title="Open Inquiries"
                   value={data.inquiry_metrics.status_counts.open ?? 0}

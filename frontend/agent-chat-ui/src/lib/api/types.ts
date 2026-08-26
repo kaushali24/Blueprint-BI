@@ -116,3 +116,11 @@ export interface ImportBatchDTO {
   status: string;
   created_at: string;
 }
+
+export interface CustomerSummaryDTO {
+  id: number;
+  name: string;
+  phone_number: string | null;
+  order_count: number;
+  inquiry_count: number;
+}

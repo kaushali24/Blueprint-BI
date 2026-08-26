@@ -1,5 +1,7 @@
+"use client";
+
+import { useState } from "react";
 import { ImportBatchDTO } from "@/lib/api/types";
-import StatusBadge from "@/components/shared/StatusBadge";
 import { formatDistanceToNow, parseISO } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -18,6 +20,8 @@ function formatTime(dateString: string) {
 }
 
 export default function RecentImports({ imports, loading }: RecentImportsProps) {
+  const [showAll, setShowAll] = useState(false);
+
   if (loading) {
     return (
       <section className="flex flex-col gap-stack-gap-md w-full mt-6">
@@ -39,15 +43,31 @@ export default function RecentImports({ imports, loading }: RecentImportsProps) 
     );
   }
 
-  if (!imports || imports.length === 0) {
+  const items = imports || [];
+
+  if (items.length === 0) {
     return null;
   }
 
+  const displayedItems = showAll ? items : items.slice(0, 5);
+  const hasMore = items.length > 5;
+
   return (
     <section className="flex flex-col gap-stack-gap-md w-full mt-6">
-      <h3 className="headline-md text-ci-on-surface">Recent Imports</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="headline-md text-ci-on-surface">Recent Imports</h3>
+        {hasMore && (
+          <button
+            type="button"
+            onClick={() => setShowAll((prev) => !prev)}
+            className="font-metadata text-metadata text-ci-primary hover:underline font-semibold focus:outline-none"
+          >
+            {showAll ? "Show less" : "View all"}
+          </button>
+        )}
+      </div>
       <div className="flex flex-col gap-3">
-        {imports.map((imp) => (
+        {displayedItems.map((imp) => (
           <div key={imp.id} className="bg-ci-surface-container-lowest border border-ci-outline-variant rounded-xl p-card-padding flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 min-w-0">
             <div className="flex flex-col gap-1 min-w-0">
               <span className="body-md font-semibold text-ci-on-surface truncate" title={imp.source_file_name || imp.import_name}>
@@ -55,7 +75,6 @@ export default function RecentImports({ imports, loading }: RecentImportsProps) 
               </span>
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">
-              <StatusBadge status={imp.status} />
               <span className="metadata text-ci-secondary">{formatTime(imp.created_at)}</span>
             </div>
           </div>

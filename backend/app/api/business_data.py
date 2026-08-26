@@ -21,7 +21,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.analytics.schemas import BusinessAnalyticsReportDTO
@@ -172,6 +172,24 @@ class ImportBatchDTO(BaseModel):
     source_file_name: Optional[str]
     status: str
     created_at: str
+
+
+class CustomerSummaryDTO(BaseModel):
+    """
+    Source: Customer + Order/Inquiry count aggregations.
+
+    id:            Customer.id
+    name:          Customer.name
+    phone_number:  Customer.phone_number (str | None)
+    order_count:   int (number of orders associated with this customer and business)
+    inquiry_count: int (number of inquiries associated with this customer and business)
+    """
+
+    id: int
+    name: str
+    phone_number: Optional[str] = None
+    order_count: int = 0
+    inquiry_count: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -441,9 +459,11 @@ def list_imports(
     """
     stmt = (
         select(ImportBatch)
-        .where(ImportBatch.business_id == business.id)
+        .where(
+            ImportBatch.business_id == business.id,
+            ImportBatch.status.in_(["completed", "partial"]),
+        )
         .order_by(ImportBatch.created_at.desc())
-        .limit(5)
     )
     imports = db.scalars(stmt).all()
 
@@ -456,6 +476,60 @@ def list_imports(
                 source_file_name=imp.source_file_name,
                 status=imp.status,
                 created_at=imp.created_at.isoformat(),
+            )
+        )
+    return results
+
+
+@router.get("/customers", response_model=list[CustomerSummaryDTO])
+def list_customers(
+    business: Business = Depends(_get_business),
+    db: Session = Depends(get_db),
+) -> list[CustomerSummaryDTO]:
+    """
+    Returns all customers identified for the business.
+    Enforces Customer.business_id == business.id.
+    Includes aggregated order_count and inquiry_count for each customer.
+    Sorted by most recently created first.
+    """
+    order_count_subq = (
+        select(func.count(Order.id))
+        .where(
+            Order.customer_id == Customer.id,
+            Order.business_id == business.id,
+        )
+        .scalar_subquery()
+    )
+    inquiry_count_subq = (
+        select(func.count(Inquiry.id))
+        .where(
+            Inquiry.customer_id == Customer.id,
+            Inquiry.business_id == business.id,
+        )
+        .scalar_subquery()
+    )
+
+    stmt = (
+        select(
+            Customer,
+            order_count_subq.label("order_count"),
+            inquiry_count_subq.label("inquiry_count"),
+        )
+        .where(Customer.business_id == business.id)
+        .order_by(Customer.created_at.desc(), Customer.id.desc())
+    )
+
+    rows = db.execute(stmt).all()
+
+    results: list[CustomerSummaryDTO] = []
+    for customer, order_count, inquiry_count in rows:
+        results.append(
+            CustomerSummaryDTO(
+                id=customer.id,
+                name=customer.name,
+                phone_number=customer.phone_number,
+                order_count=order_count or 0,
+                inquiry_count=inquiry_count or 0,
             )
         )
     return results

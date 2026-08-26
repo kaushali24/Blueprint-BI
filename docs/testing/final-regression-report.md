@@ -13,12 +13,12 @@ python -m pytest -v
 ```
 
 **Results:**
-- **Total Tests Collected:** 174
-- **Passed:** 174
+- **Total Tests Collected:** 181
+- **Passed:** 181
 - **Failed:** 0
 - **Skipped:** 0
-- **Warnings:** 2 (Pydantic/Starlette deprecation warnings)
-- **Duration:** 7.83s
+- **Warnings:** 133 (FastAPI/Pydantic/Starlette deprecation warnings)
+- **Duration:** 7.16s
 - **Exit Code:** 0
 
 **Key Areas Validated:**
@@ -29,7 +29,7 @@ python -m pytest -v
 - Extraction Consolidation (Atomic Replacement, State Transitions)
 - Customer Identity Resolution
 - Analytics (Status Filtering, Null Semantics, Isolation)
-- Business Data APIs
+- Business Data APIs (Including Customers API drill-down, isolation, and data mapping)
 - Business Assistant (Prompt Generation, Tools)
 
 ## Frontend Quality Gates
@@ -46,10 +46,11 @@ python -m pytest -v
 **Command:** `pnpm build`
 **Result:** Passed
 - Compiled successfully
-- Generated static pages (10/10)
+- Generated static pages (11/11)
 - Optimized production build ready
 
 ## Safety & Isolation Checks
 
 - **Business Isolation:** Validated across tests (`test_analytics_isolation.py`, `test_business_isolation_is_data_access_level_only`).
+- **Customers API Isolation:** Validated customer list endpoint strictly filters by business ID and correctly maps aggregated data.
 - **Secret & Database Safety:** Confirmed through repository audits. `.env` and `.env.local` files, API keys, and temporary `.zip` files remain ignored by Git and are not tracked in the repository. No SQLite demo databases are unintentionally committed.

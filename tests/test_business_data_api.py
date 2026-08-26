@@ -37,6 +37,7 @@ from tests.conftest import (
     make_order_item,
     make_participant,
 )
+from app.database.models import Customer
 
 
 # ===========================================================================
@@ -374,3 +375,113 @@ class TestInquiries:
 
         item = client.get(f"/api/v1/businesses/{biz.id}/inquiries").json()[0]
         assert "confidence" not in item
+
+
+# ===========================================================================
+# CUSTOMERS LIST
+# ===========================================================================
+
+
+class TestCustomersList:
+    def test_unknown_business_returns_404(self, client, db):
+        resp = client.get("/api/v1/businesses/9999/customers")
+        assert resp.status_code == 404
+
+    def test_valid_business_no_customers_returns_empty_list(self, client, db):
+        biz = make_business(db)
+        db.commit()
+        resp = client.get(f"/api/v1/businesses/{biz.id}/customers")
+        assert resp.status_code == 200
+        assert resp.json() == []
+
+    def test_customer_mapping_and_null_phone_number(self, client, db):
+        biz = make_business(db)
+        c1 = Customer(business_id=biz.id, name="Nimali", phone_number=None)
+        db.add(c1)
+        db.commit()
+
+        resp = client.get(f"/api/v1/businesses/{biz.id}/customers")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) == 1
+        assert data[0]["id"] == c1.id
+        assert data[0]["name"] == "Nimali"
+        assert data[0]["phone_number"] is None
+        assert data[0]["order_count"] == 0
+        assert data[0]["inquiry_count"] == 0
+
+    def test_customer_with_phone_number_orders_and_inquiries_count(self, client, db):
+        biz = make_business(db)
+        customer = Customer(business_id=biz.id, name="Kasun", phone_number="+94771234567")
+        db.add(customer)
+        db.flush()
+
+        # Add 2 orders
+        make_order(db, biz, customer=customer, status="confirmed")
+        make_order(db, biz, customer=customer, status="pending")
+
+        # Add 3 inquiries
+        make_inquiry(db, biz, customer=customer, summary="Inquiry 1")
+        make_inquiry(db, biz, customer=customer, summary="Inquiry 2")
+        make_inquiry(db, biz, customer=customer, summary="Inquiry 3")
+        db.commit()
+
+        resp = client.get(f"/api/v1/businesses/{biz.id}/customers")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) == 1
+        assert data[0]["name"] == "Kasun"
+        assert data[0]["phone_number"] == "+94771234567"
+        assert data[0]["order_count"] == 2
+        assert data[0]["inquiry_count"] == 3
+
+    def test_multiple_customers_returned_correctly(self, client, db):
+        biz = make_business(db)
+        make_customer(db, biz, name="Tharushi")
+        make_customer(db, biz, name="Dinuka")
+        db.commit()
+
+        resp = client.get(f"/api/v1/businesses/{biz.id}/customers")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) == 2
+        names = {item["name"] for item in data}
+        assert names == {"Tharushi", "Dinuka"}
+
+    def test_business_isolation_customers(self, client, db):
+        biz_a = make_business(db, name="Bakery A")
+        biz_b = make_business(db, name="Bakery B")
+
+        c_a = make_customer(db, biz_a, name="Customer A")
+        c_b = make_customer(db, biz_b, name="Customer B")
+
+        # Give c_b an order in biz_b
+        make_order(db, biz_b, customer=c_b)
+        db.commit()
+
+        # Business A response should contain ONLY Customer A, never Customer B
+        resp_a = client.get(f"/api/v1/businesses/{biz_a.id}/customers")
+        assert resp_a.status_code == 200
+        data_a = resp_a.json()
+        assert len(data_a) == 1
+        assert data_a[0]["name"] == "Customer A"
+        assert data_a[0]["id"] == c_a.id
+
+        # Business B response should contain ONLY Customer B, never Customer A
+        resp_b = client.get(f"/api/v1/businesses/{biz_b.id}/customers")
+        assert resp_b.status_code == 200
+        data_b = resp_b.json()
+        assert len(data_b) == 1
+        assert data_b[0]["name"] == "Customer B"
+        assert data_b[0]["id"] == c_b.id
+        assert data_b[0]["order_count"] == 1
+
+    def test_does_not_expose_ai_metadata(self, client, db):
+        biz = make_business(db)
+        make_customer(db, biz, name="Amaya")
+        db.commit()
+
+        item = client.get(f"/api/v1/businesses/{biz.id}/customers").json()[0]
+        assert "confidence" not in item
+        assert "model" not in item
+        assert "extraction_id" not in item

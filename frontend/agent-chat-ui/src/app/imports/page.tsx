@@ -15,7 +15,7 @@ import RecentImports from "@/components/imports/RecentImports";
 const QUICK_STEPS = [
   "Open the customer chat in WhatsApp",
   'Choose "Export chat"',
-  "Export without media for a smaller file",
+  'Choose "Without media"',
   "Upload the exported ZIP here",
 ] as const;
 
@@ -55,8 +55,8 @@ export default function ImportsPage() {
 
       <PageHeader title="Import WhatsApp Conversations" />
 
-      <p className="font-metadata text-metadata text-ci-on-surface-variant max-w-lg -mt-2">
-        Export your WhatsApp chat and upload the ZIP file here. Images and voice messages can be included, but advanced media interpretation isn't available in this MVP.
+      <p className="font-metadata text-metadata text-ci-on-surface-variant -mt-2">
+        Upload an exported WhatsApp chat ZIP to turn your conversations into business insights.
       </p>
 
       {showInstructions && (
