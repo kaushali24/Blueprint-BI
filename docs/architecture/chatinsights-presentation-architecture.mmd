@@ -1,0 +1,66 @@
+flowchart LR
+
+    subgraph INPUT["📱  INPUT"]
+        direction TB
+        A1["WhatsApp\nExport ZIP"]
+    end
+
+    subgraph INGEST["📥  INGESTION  ·FastAPI·"]
+        direction TB
+        B1["Validate ZIP"]
+        B2["Parse & Normalize\nMessages"]
+        B3["Deduplicate\n(SHA-256 fingerprint)"]
+        B4["Persist Conversations\n& Messages"]
+        B1 --> B2 --> B3 --> B4
+    end
+
+    subgraph AI["🧠  AI UNDERSTANDING"]
+        direction TB
+        C1["Business Relevance\nDetection\n(rule-based classifier)"]
+        C2["Episode Grouping\n(conversation context)"]
+        C3["Gemini Extraction\nOrders · Inquiries\nFeedback · Customers"]
+        C4["Evidence Links\nto source messages"]
+        C1 --> C2 --> C3 --> C4
+    end
+
+    subgraph DATA["🗄️  STRUCTURED DATA  ·SQLite · SQLAlchemy·"]
+        direction TB
+        D1["Customers"]
+        D2["Orders\n& Line Items"]
+        D3["Inquiries"]
+        D4["Feedback"]
+        D5["Evidence\nTraceability"]
+    end
+
+    subgraph AGENT["📊  ANALYTICS & AGENT"]
+        direction TB
+        E1["Deterministic\nAnalytics Service\n(SQL aggregations)"]
+        E2["Business-Scoped\nTools\n(LangChain)"]
+        E3["Gemini\nBusiness Assistant\n(LangGraph · ReAct)"]
+        E1 --> E2 --> E3
+    end
+
+    subgraph UX["🖥️  USER EXPERIENCE  ·Next.js·"]
+        direction TB
+        F1["Overview\nDashboard"]
+        F2["Orders\n& Customers"]
+        F3["Inquiries"]
+        F4["AI Assistant\n(EN / SI / Singlish)"]
+        F5["Import\nHistory"]
+    end
+
+    INPUT --> INGEST --> AI --> DATA --> AGENT --> UX
+
+    classDef inputStyle  fill:#EAF7F3,stroke:#008A78,stroke-width:2px,color:#182428
+    classDef ingestStyle fill:#FFFFFF,stroke:#D8E4E0,stroke-width:1.5px,color:#182428
+    classDef aiStyle     fill:#EAF7F3,stroke:#008A78,stroke-width:2px,color:#182428
+    classDef dataStyle   fill:#F5F9F8,stroke:#D8E4E0,stroke-width:1.5px,color:#182428
+    classDef agentStyle  fill:#EAF7F3,stroke:#008A78,stroke-width:2px,color:#182428
+    classDef uxStyle     fill:#FFFFFF,stroke:#D8E4E0,stroke-width:1.5px,color:#182428
+
+    class A1 inputStyle
+    class B1,B2,B3,B4 ingestStyle
+    class C1,C2,C3,C4 aiStyle
+    class D1,D2,D3,D4,D5 dataStyle
+    class E1,E2,E3 agentStyle
+    class F1,F2,F3,F4,F5 uxStyle
