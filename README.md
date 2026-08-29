@@ -306,6 +306,10 @@ Copy-Item .env.example .env
 *(Add your `GOOGLE_API_KEY` to the `.env` file)*
 
 ```bash
+# Initialize the database schema and seed the MVP business
+python scripts/init_db.py
+
+# Start the server
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
@@ -322,6 +326,17 @@ Copy-Item .env.example .env
 pnpm dev
 ```
 Access the application at `http://localhost:3000`.
+
+---
+
+# Try the Demo
+
+ChatInsights includes curated, reproducible demo data. To test the MVP workflow from scratch:
+
+1. Follow the **Getting Started** setup instructions above (including `python scripts/init_db.py`).
+2. Go to the **Imports** tab in the web UI.
+3. Upload the provided demo ZIP files located in the `demo-data/` folder.
+4. See [demo-data/README.md](demo-data/README.md) for the exact recommended import sequence, incremental export behavior, and expected business analytics results.
 
 ---
 
